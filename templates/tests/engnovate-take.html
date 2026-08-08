@@ -451,15 +451,14 @@ body { background: var(--bg-secondary); }
     <!-- SIDE NAV -->
     <div class="test-side">
       <div class="side-title">Bo'limlar</div>
-      <a class="side-part" onclick="goStepTo(0)">🎧 Listening</a>
-      <a class="side-part" onclick="goStepTo(1)">📖 Reading <small>35 daqiqa</small></a>
-      <a class="side-part" onclick="goStepTo(2)">✍️ Writing <small>15 daqiqa</small></a>
+      <a class="side-part" id="sideNav0" onclick="goStepTo(0)">🎧 Listening</a>
+      <a class="side-part" id="sideNav1" onclick="goStepTo(1)">📖 Reading <small>35 daqiqa</small></a>
+      <a class="side-part" id="sideNav2" onclick="goStepTo(2)">✍️ Writing <small>15 daqiqa</small></a>
     </div>
   </div>
 
   <!-- BOTTOM BAR -->
   <div class="test-bottombar">
-    <button type="button" class="btn-review" id="prevBtn" onclick="goStep(-1)" style="display:none;">← Orqaga</button>
     <div style="flex:1;text-align:center;font-size:12px;color:var(--text-muted);" id="stepHint"></div>
     <button type="button" class="btn-submit" id="nextBtn" onclick="nextStep()">Keyingisi →</button>
   </div>
@@ -473,22 +472,22 @@ var currentStep = 0;
 var timerInterval = null;
 var timeLeft = 0;
 var stepRemaining = {0: 0, 1: 35*60, 2: 15*60};  // per-step remaining time (never resets)
-var audioPlayed = false;  // listening audio: only one play allowed
+var reviewMode = false;   // after writing time ends: 1 minute review
 
-// Determine steps: which part-cards belong to which step
 function showStep(step) {
   currentStep = step;
   // Show/hide part cards
   document.querySelectorAll('.part-card').forEach(card => {
     var s = parseInt(card.dataset.step);
-    card.style.display = (s === step) ? '' : 'none';
+    card.style.display = (s === step || reviewMode) ? '' : 'none';
   });
   // Update label
-  document.getElementById('stepLabel').textContent = STEP_LABELS[step];
+  document.getElementById('stepLabel').textContent = reviewMode ? '📋 JAVOBLARNI TEKSHIRISH' : STEP_LABELS[step];
   // Buttons
-  document.getElementById('prevBtn').style.display = step > 0 ? '' : 'none';
   var nextBtn = document.getElementById('nextBtn');
-  if (step === 2) {
+  if (reviewMode) {
+    nextBtn.textContent = '📤 Yakunlash';
+  } else if (step === 2) {
     nextBtn.textContent = '📤 Submit';
   } else {
     nextBtn.textContent = step === 0 ? '▶ Readingga o\'tish' : '▶ Writingga o\'tish';
@@ -499,34 +498,55 @@ function showStep(step) {
     1: '⏱️ Reading — 35 daqiqa',
     2: '⏱️ Writing — 15 daqiqa'
   };
-  document.getElementById('stepHint').textContent = hints[step];
-  // Timer management — RESTORE saved remaining time (never resets on re-entry)
+  document.getElementById('stepHint').textContent = reviewMode ? '⏱️ Javoblarni tekshirish uchun 1 daqiqa' : (hints[step] || '');
+  // Timer management — RESTORE saved remaining time (never resets)
   clearInterval(timerInterval);
   document.getElementById('testTimer').classList.remove('warning', 'danger');
-  if (step === 0) {
-    // Listening: no countdown (audio controls the time); show audio duration instead
+  if (step === 0 && !reviewMode) {
     document.getElementById('testTimer').textContent = '--:--';
   } else {
-    timeLeft = stepRemaining[step];
+    timeLeft = reviewMode ? 60 : stepRemaining[step];
     updateTimerDisplay();
     timerInterval = setInterval(tick, 1000);
   }
+  // Active side nav
+  document.querySelectorAll('.side-part').forEach(el => el.classList.remove('active'));
+  var nav = document.getElementById('sideNav' + step);
+  if (nav) nav.classList.add('active');
   // Scroll to top of the step
   document.getElementById('testMain').scrollTop = 0;
 }
 
 function tick() {
   timeLeft--;
+  if (reviewMode) {
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      submitForm();
+      return;
+    }
+    updateTimerDisplay();
+    return;
+  }
   stepRemaining[currentStep] = timeLeft;  // persist remaining time
   if (timeLeft <= 0) {
     clearInterval(timerInterval);
     stepRemaining[currentStep] = 0;
-    updateTimerDisplay();
-    if (currentStep === 1) { goStep(1); }        // reading time up → writing
-    else if (currentStep === 2) { submitForm(); } // writing time up → submit
+    if (currentStep === 1) {
+      // reading time up → writing
+      showStep(2);
+    } else if (currentStep === 2) {
+      // writing time up → 1 minute review
+      startReview();
+    }
     return;
   }
   updateTimerDisplay();
+}
+
+function startReview() {
+  reviewMode = true;
+  showStep(2);  // shows all parts for review
 }
 
 function updateTimerDisplay() {
@@ -538,23 +558,24 @@ function updateTimerDisplay() {
   el.classList.toggle('danger', timeLeft <= 60);
 }
 
-function goStep(delta) {
-  var next = currentStep + delta;
-  if (next < 0 || next > 2) return;
-  showStep(next);
-}
-
 function goStepTo(step) {
-  if (step < 0 || step > 2) return;
+  // Only forward navigation allowed — never back to a previous part
+  if (reviewMode) return;
+  if (step <= currentStep) return;
+  if (step > 2) return;
+  // Listening → Reading requires audio played? No — just move forward.
   showStep(step);
 }
 
 function nextStep() {
+  if (reviewMode) {
+    submitForm();
+    return;
+  }
   if (currentStep === 0) {
-    // Require audio to have been played at least once? No — just move on.
-    goStep(1);
+    showStep(1);
   } else if (currentStep === 1) {
-    goStep(2);
+    showStep(2);
   } else {
     submitForm();
   }
