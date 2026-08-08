@@ -667,6 +667,7 @@ def take_test_all(attempt_id):
     prepared = []
     for qi, q in enumerate(questions):
         q = dict(q)
+        q["_qi"] = qi  # global index for form field names
         if q.get("type") == "writing" and q.get("gap_items"):
             q["rendered_passage"] = _render_gaps(q, qi)
         # MC gap-fill (Black Mamba style): passage with inline dropdowns
