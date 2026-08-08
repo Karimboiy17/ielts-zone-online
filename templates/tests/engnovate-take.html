@@ -294,6 +294,9 @@ body { background: var(--bg-secondary); }
 
           <!-- ===== GAP-FILL (writing + gap_items) ===== -->
           {% if question.type == 'writing' and question.get('gap_items') %}
+          {% if question.get('instruction') %}
+          <div class="part-instruction">{{ question.instruction }}</div>
+          {% endif %}
           <div class="rendered-passage">
             {% if question.get('title') %}<div class="passage-title">{{ question.title }}</div>{% endif %}
             {{ question.rendered_passage|safe }}
@@ -347,6 +350,9 @@ body { background: var(--bg-secondary); }
 
           <!-- ===== MULTIPLE GROUP ===== -->
           {% elif question.type == 'multiple_group' %}
+          {% if question.get('instruction') %}
+          <div class="part-instruction">{{ question.instruction }}</div>
+          {% endif %}
           {% if question.get('rendered_mc_passage') %}
           <!-- MC gap-fill: passage with inline dropdowns, no separate item cards -->
           <div class="rendered-passage">

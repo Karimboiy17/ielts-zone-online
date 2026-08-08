@@ -13,6 +13,7 @@ IMG = "/static/images/b1mid/"
 LISTENING_QUESTIONS = [
     {"id": "l_p1", "type": "multiple_group", "section": "listening", "part": 1, "start_num": 1,
      "question": "You will hear five short conversations. Choose the correct picture (A, B, or C).\nYou will hear each conversation twice.",
+     "instruction": "Part 1. Questions 1-5.\nYou will hear five short conversations. Choose the correct picture (A, B, or C).\nYou will hear each conversation twice.",
      "points": 5,
      "items": [
          {"q": "1. What does mum say Helen's brother can eat?", "image": IMG + "lq1.png",
@@ -28,6 +29,7 @@ LISTENING_QUESTIONS = [
      ]},
     {"id": "l_p2", "type": "writing", "section": "listening", "part": 2, "start_num": 6,
      "question": "You will hear a manager called Sandra talking about a company training day.\nFor each question, write the correct answer in the gap.",
+     "instruction": "Part 2. Questions 6-10.\nYou will hear a manager called Sandra talking about a company training day.\nFor each question, write the correct answer in the gap.",
      "title": "Company Training Day",
      "passage": "Some of the training sessions may take place in a (6) ________ to the one in the programme.\nYour training sessions will be confirmed by email on (7) ________.\nPlease complete the (8) ________ in the materials before you come to the training event.\nPlease give your completed questionnaire to the (9) ________ after the training day.\nThe (10) ________ will be closed on the training day.",
      "gap_items": ["DIFFERENT BUILDING", "13 SEPTEMBER", "EXERCISES", "TRAINING MANAGER", "(COMPANY) RESTAURANT"],
@@ -35,6 +37,7 @@ LISTENING_QUESTIONS = [
      "points": 5},
     {"id": "l_p3", "type": "multiple_group", "section": "listening", "part": 3, "start_num": 11,
      "question": "You will hear an interview with a student called Emily, who walks people's dogs.\nChoose the correct answer A, B, or C.",
+     "instruction": "Part 3. Questions 11-15.\nYou will hear an interview with a student called Emily, who walks people's dogs.\nChoose the correct answer A, B, or C.",
      "points": 5,
      "items": [
          {"q": "11. What does Emily say about walking dogs?",
@@ -55,6 +58,7 @@ LISTENING_QUESTIONS = [
      ]},
     {"id": "l_p4", "type": "multiple_group", "section": "listening", "part": 4, "start_num": 16,
      "question": "You will hear a woman called Anne and a man called Peter talking about a college party.\nDecide if each sentence is correct or incorrect.\nIf it is correct, write YES. If it is not correct, write NO.",
+     "instruction": "Part 4. Questions 16-20.\nYou will hear a woman called Anne and a man called Peter talking about a college party.\nDecide if each sentence is correct or incorrect.\nIf it is correct, write YES. If it is not correct, write NO.",
      "points": 5,
      "items": [
          {"q": "16. Peter wants to take his sister to the party.",
