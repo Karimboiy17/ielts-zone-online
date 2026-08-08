@@ -448,8 +448,8 @@ body { background: var(--bg-secondary); }
       </form>
     </div>
 
-    <!-- SIDE NAV -->
-    <div class="test-side">
+    <!-- SIDE NAV (removed — caused accidental navigation) -->
+    <div class="test-side" style="display:none;">
       <div class="side-title">Bo'limlar</div>
       <a class="side-part" id="sideNav0" onclick="goStepTo(0)">🎧 Listening</a>
       <a class="side-part" id="sideNav1" onclick="goStepTo(1)">📖 Reading <small>35 daqiqa</small></a>
@@ -476,6 +476,19 @@ var reviewMode = false;   // after writing time ends: 1 minute review
 
 function showStep(step) {
   currentStep = step;
+
+  // Stop listening audio when leaving the listening step
+  if (step !== 0) {
+    var audio = document.getElementById('listenAudio');
+    if (audio) {
+      try { audio.pause(); } catch (e) {}
+    }
+    var btn = document.getElementById('listenPlayBtn');
+    if (btn && listeningStarted && !listeningEnded) {
+      btn.textContent = '🔊 Audio to\'xtatildi';
+    }
+  }
+
   // Show/hide part cards
   document.querySelectorAll('.part-card').forEach(card => {
     var s = parseInt(card.dataset.step);
