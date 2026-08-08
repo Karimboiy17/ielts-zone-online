@@ -287,7 +287,7 @@ body { background: var(--bg-secondary); }
           {% if qi == 0 or question.get('part', 1) == 1 %}
           <div class="audio-player">
             <span class="audio-label">▶ Listening audio</span>
-            <audio controls preload="none" src="{{ audio_parts[0] }}"></audio>
+            <audio controls preload="auto" src="{{ audio_parts[0] }}"></audio>
           </div>
           {% endif %}
           {% endif %}
