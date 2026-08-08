@@ -103,28 +103,68 @@ def _handle(app, update):
     fname = msg["from"].get("first_name", "User")
 
     if text.startswith("/start"):
-        site_url = app.config.get("SITE_URL", "")
+        from app.extensions import mongo
+        # Reset registration state, start with asking name
+        mongo.db.bot_states.update_one(
+            {"tg_id": tg_id},
+            {"$set": {"state": "awaiting_name", "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
         _send(app, chat_id,
             f"👋 Assalomu alaykum, {fname}!\n\n"
-            f"📝 Imtihon topshirish uchun <b>o'qituvchingizdan olingan kodni</b> yozib yuboring.\n\n"
-            f"🔑 Masalan: <code>zoneb1+mid</code>\n\n"
-            f"Kod qabul qilingach, imtihon tugmasi chiqadi — bosing va testni topshiring!\n\n"
-            f"✅ Natija avtomatik o'qituvchingizga yuboriladi.",
-            _main_menu(site_url))
+            f"📝 Imtihon topshirish uchun avval ro'yxatdan o'ting.\n\n"
+            f"1️⃣ <b>Ism familiyangizni</b> yozing.\n\n"
+            f"Masalan: <code>Aziz Karimov</code>")
         return
 
     if msg.get("photo"):
         _handle_payment_receipt(app, chat_id, tg_id, fname, msg)
         return
 
-    # Handle text — payment code or test ID
+    # Handle text — registration state machine
     from app.extensions import mongo
     state = mongo.db.bot_states.find_one({"tg_id": tg_id})
+    cur_state = (state or {}).get("state", "")
 
-    # ==== ACCESS CODE FLOW (teacher gives code like zoneb1+mid) ====
-    access_codes = current_app_access_codes(app)
-    code_key = text.strip().lower().replace(" ", "")
-    if code_key in access_codes:
+    # ==== STEP 1: awaiting name ====
+    if cur_state == "awaiting_name":
+        full_name = text.strip()
+        if len(full_name.split()) < 1:
+            _send(app, chat_id, "❌ Ismingizni yozing, masalan: <code>Aziz Karimov</code>")
+            return
+        mongo.db.bot_states.update_one(
+            {"tg_id": tg_id},
+            {"$set": {"state": "awaiting_teacher", "full_name": full_name, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        _send(app, chat_id,
+            f"✅ <b>{full_name}</b> — saqlandi!\n\n"
+            f"2️⃣ Endi <b>o'qituvchingizning ismini</b> yozing.\n\n"
+            f"Masalan: <code>Alisher aka</code>")
+        return
+
+    # ==== STEP 2: awaiting teacher name ====
+    if cur_state == "awaiting_teacher":
+        teacher = text.strip()
+        mongo.db.bot_states.update_one(
+            {"tg_id": tg_id},
+            {"$set": {"state": "awaiting_code", "teacher_name": teacher, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        _send(app, chat_id,
+            f"✅ O'qituvchi: <b>{teacher}</b> — saqlandi!\n\n"
+            f"3️⃣ Endi <b>o'qituvchingiz bergan kodni</b> yozing.\n\n"
+            f"🔑 Masalan: <code>zoneb1+mid</code>")
+        return
+
+    # ==== STEP 3: awaiting code ====
+    if cur_state == "awaiting_code":
+        access_codes = current_app_access_codes(app)
+        code_key = text.strip().lower().replace(" ", "")
+        if code_key not in access_codes:
+            _send(app, chat_id, "❌ Kod noto'g'ri. O'qituvchingizdan to'g'ri kodni so'rang.\n\n"
+                                f"Masalan: <code>zoneb1+mid</code>")
+            return
         section = access_codes[code_key]
         test = mongo.db.tests.find_one({"section": section, "active": True})
         if not test:
@@ -132,27 +172,54 @@ def _handle(app, update):
             return
         title = test.get("title", section)
         site_url = app.config.get("SITE_URL", "")
-        # Remember which test this user opened with this code
+        full_name = (state or {}).get("full_name", fname)
+        teacher_name = (state or {}).get("teacher_name", "")
+        # Save full registration
         mongo.db.access_grants.update_one(
             {"tg_id": tg_id},
             {"$set": {"code": code_key, "section": section, "test_title": title,
-                      "tg_username": uname, "tg_name": fname,
+                      "tg_username": uname, "tg_name": full_name,
+                      "teacher_name": teacher_name,
                       "granted_at": datetime.now(timezone.utc)}},
             upsert=True,
         )
+        # Also save to user profile in DB
+        _save_student_profile(app, tg_id, full_name, teacher_name, code_key, section)
+        # Clear state
+        mongo.db.bot_states.update_one({"tg_id": tg_id}, {"$set": {"state": "done"}})
         _send(app, chat_id,
-            f"✅ <b>{title}</b> imtihoni ochildi!\n\n"
-            f"📝 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
+            f"✅ <b>{full_name}</b>, ro'yxatdan o'tdingiz!\n\n"
+            f"📚 O'qituvchi: {teacher_name}\n"
+            f"📝 Imtihon: <b>{title}</b>\n\n"
+            f"👇 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
             f"⏱️ Vaqt: {test.get('time_limit', 70)} daqiqa\n"
-            f"❓ Savollar: {len(test.get('questions', []))} qism\n\n"
             f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
             {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
                                    "web_app": {"url": f"{site_url}/m/{section}/"}}]]})
         return
 
     # ==== Any other text → menu ====
-    _menu(app, chat_id, "Bosh menyu. Kod yuborish uchun o'qituvchingizdan olingan kodni yozing, masalan: <code>zoneb1+mid</code>")
+    _menu(app, chat_id, "Bosh menyu. Ro'yxatdan o'tish uchun <b>/start</b> bosing.")
     return
+
+
+def _save_student_profile(app, tg_id, full_name, teacher_name, code_key, section):
+    """Save/update student profile in DB so results can be matched."""
+    try:
+        from app.extensions import mongo
+        mongo.db.students.update_one(
+            {"tg_id": tg_id},
+            {"$set": {
+                "full_name": full_name,
+                "teacher_name": teacher_name,
+                "code": code_key,
+                "section": section,
+                "updated_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception:
+        pass
 
 def _callback(app, cb):
     data = cb.get("data", "")
