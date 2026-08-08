@@ -103,24 +103,13 @@ def _handle(app, update):
     fname = msg["from"].get("first_name", "User")
 
     if text.startswith("/start"):
-        import secrets
-        from app.extensions import mongo
-        code = str(secrets.randbelow(900000) + 100000)
-        mongo.db.verification_codes.insert_one({
-            "code": code, "used": False,
-            "tg_id": tg_id, "tg_username": uname, "tg_name": fname,
-            "created_at": datetime.now(timezone.utc),
-            "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10),
-        })
         site_url = app.config.get("SITE_URL", "")
         _send(app, chat_id,
             f"👋 Assalomu alaykum, {fname}!\n\n"
-            f"📝 <b>Imtihonni boshlash</b> tugmasini bosing — testlar Telegram ichida ochiladi.\n\n"
-            f"🔑 Ro'yxatdan o'tish kodi: <code>{code}</code>\n\n"
-            f"1. Imtihonni boshlang\n"
-            f"2. Ro'yxatdan o'ting (ism + kod)\n"
-            f"3. Testni topshiring!\n\n"
-            f"⏳ Kod 10 daqiqa amal qiladi.",
+            f"📝 Imtihon topshirish uchun <b>o'qituvchingizdan olingan kodni</b> yozib yuboring.\n\n"
+            f"🔑 Masalan: <code>zoneb1+mid</code>\n\n"
+            f"Kod qabul qilingach, imtihon tugmasi chiqadi — bosing va testni topshiring!\n\n"
+            f"✅ Natija avtomatik o'qituvchingizga yuboriladi.",
             _main_menu(site_url))
         return
 
@@ -158,7 +147,7 @@ def _handle(app, update):
             f"❓ Savollar: {len(test.get('questions', []))} qism\n\n"
             f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
             {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
-                                   "web_app": {"url": f"{site_url}/tests/{section}/"}}]]})
+                                   "web_app": {"url": f"{site_url}/m/{section}/"}}]]})
         return
 
     # ==== Any other text → menu ====

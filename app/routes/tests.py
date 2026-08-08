@@ -50,6 +50,21 @@ def start_test(section):
     return redirect(url_for("tests.take_test", attempt_id=attempt["_id"]))
 
 
+@tests_bp.route("/m/<section>/")
+def mini_test(section):
+    """Mini app entry: opens the test DIRECTLY (no site login page).
+    User is identified via Telegram WebApp initData (auto-login bridge)."""
+    if current_user.is_authenticated:
+        test = TestModel.get_by_section(section)
+        if not test:
+            flash("Test topilmadi", "error")
+            return redirect(url_for("tests.test_list"))
+        attempt = TestAttempt.create(current_user.id, test["_id"], section)
+        return redirect(url_for("tests.take_test_all", attempt_id=attempt["_id"]))
+    # Not logged in yet: render bridge page that auto-logs-in via TG initData
+    return render_template("tests/tg-auth-bridge.html", section=section)
+
+
 @tests_bp.route("/take/<attempt_id>")
 @login_required
 def take_test(attempt_id):
