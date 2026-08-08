@@ -677,7 +677,9 @@ function selectPicOption(label, optIdx) {
     o.querySelector('input[type="radio"]').checked = false;
   });
   label.classList.add('selected');
-  label.querySelector('input[type="radio"]').checked = true;
+  const radio = label.querySelector('input[type="radio"]');
+  radio.checked = true;
+  radio.value = optIdx;
 }
 
 // Init: start at listening step
