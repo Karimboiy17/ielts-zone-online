@@ -67,8 +67,15 @@ def create_app(config_class=Config):
         _seed_data(app)
 
     # Start Telegram bot poller in background
-    from app.bot_poller import start_poller
+    from app.bot_poller import start_poller, ensure_access_codes
     start_poller(app)
+
+    # Generate access codes once (notifies admin privately via bot)
+    try:
+        with app.app_context():
+            ensure_access_codes(app)
+    except Exception as e:
+        print(f"  ⚠ Access codes init: {e}")
 
     return app
 

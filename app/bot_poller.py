@@ -7,33 +7,60 @@ from datetime import datetime, timezone, timedelta
 logger = logging.getLogger(__name__)
 _ACTIVE = True
 
-# Default access codes: teacher gives these to students
-# Format: {"zoneb1+mid": "b1plus_mid", ...}  (code -> test section)
-DEFAULT_ACCESS_CODES = {
-    "zoneb1+mid": "b1plus_mid",
-    "zoneb1+end": "b1plus_end",
-    "zonea1+mid": "a1_mid",
-    "zonea1+end": "a1_end",
-    "zonea2+mid": "a2_mid",
-    "zonea2+end": "a2_end",
-    "zoneb1mid": "b1_mid",
-    "zoneb1end": "b1_end",
-    "zonenovice+mid": "novice_mid",
-    "zonenovice+end": "novice_end",
-}
+# Access codes are NOT hardcoded — they're stored in DB (admin-managed)
+# and sent to the admin privately. Students never see them from the bot.
 
 def current_app_access_codes(app):
-    """Load access codes — from DB (admin-managed) merged with defaults."""
+    """Load access codes from DB (admin-managed). Returns {} if none set."""
     try:
         from app.extensions import mongo
         doc = mongo.db.settings.find_one({"key": "access_codes"})
         if doc and doc.get("codes"):
-            codes = dict(DEFAULT_ACCESS_CODES)
-            codes.update(doc["codes"])
-            return codes
+            return dict(doc["codes"])
     except Exception:
         pass
-    return dict(DEFAULT_ACCESS_CODES)
+    return {}
+
+
+def ensure_access_codes(app):
+    """Generate fresh random codes on first run and notify admin privately.
+    Codes are stored in DB — students never see them from the bot."""
+    try:
+        from app.extensions import mongo
+        doc = mongo.db.settings.find_one({"key": "access_codes"})
+        if doc and doc.get("codes"):
+            return doc["codes"]
+        import secrets, string
+        sections = ["novice_mid", "novice_end", "a1_mid", "a1_end",
+                    "a2_mid", "a2_end", "b1_mid", "b1_end",
+                    "b1plus_mid", "b1plus_end"]
+        alphabet = string.ascii_lowercase + string.digits
+        codes = {}
+        for s in sections:
+            codes["".join(secrets.choice(alphabet) for _ in range(8))] = s
+        mongo.db.settings.update_one(
+            {"key": "access_codes"},
+            {"$set": {"codes": codes, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        # Notify admin privately with the codes
+        admin_chat = app.config.get("ADMIN_CHAT_ID", "")
+        token = app.config.get("BOT_TOKEN", "")
+        if admin_chat and token:
+            lines = ["🔑 <b>YANGI IMTIHON KODLARI</b>\n", "Faqat o'qituvchilarga bering:\n"]
+            for code, sec in codes.items():
+                test = mongo.db.tests.find_one({"section": sec})
+                title = test["title"] if test else sec
+                lines.append(f"<code>{code}</code> → <b>{title}</b>")
+            import requests
+            requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                          json={"chat_id": admin_chat, "text": "\n".join(lines),
+                                "parse_mode": "HTML"}, timeout=10)
+        print(f"  ✓ Access codes generated ({len(codes)} codes)")
+        return codes
+    except Exception as e:
+        print(f"  ⚠ Access codes error: {e}")
+        return {}
 
 def _main_menu(site_url=""):
     return {"inline_keyboard": [
