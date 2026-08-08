@@ -64,8 +64,7 @@ body { background: var(--bg-secondary); }
   .option-item span { font-size: 14px !important; }
   /* Audio player full width */
   .audio-player { flex-direction: column; align-items: stretch; gap: 6px; padding: 10px; }
-  .audio-player audio { width: 100%; height: 42px; }
-  .audio-label { font-size: 13px; }
+  .audio-play-btn { font-size: 15px; padding: 16px 20px; }
   /* Gap inputs wider on mobile */
   .gap-input { width: 90px; }
   .gap-select { min-width: 80px; font-size: 13px; }
@@ -110,10 +109,23 @@ body { background: var(--bg-secondary); }
   width: 100%; margin-bottom: 16px;
   display: flex; align-items: center; gap: 10px;
   background: var(--red-bg); border: 1px solid var(--red);
-  border-radius: 10px; padding: 8px 12px;
+  border-radius: 10px; padding: 12px;
 }
-.audio-player audio { flex: 1; height: 36px; }
-.audio-label { font-size: 12px; font-weight: 700; color: var(--red); white-space: nowrap; }
+.audio-play-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--red); color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 16px; font-weight: 800;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.15s;
+}
+.audio-play-btn:hover { background: var(--red-dark); }
+.audio-play-btn.played {
+  background: var(--green-dark);
+  cursor: default;
+}
+.audio-player audio { display: none; }
 
 /* QUESTION ITEM */
 .q-item {
@@ -286,8 +298,10 @@ body { background: var(--bg-secondary); }
           {% if question.section == 'listening' and audio_parts and qi < audio_parts|length %}
           {% if qi == 0 or question.get('part', 1) == 1 %}
           <div class="audio-player">
-            <span class="audio-label">▶ Listening audio</span>
-            <audio controls preload="auto" src="{{ audio_parts[0] }}"></audio>
+            <button type="button" class="audio-play-btn" id="listenPlayBtn" onclick="playListeningAudio(this)">
+              ▶ Eshiting
+            </button>
+            <audio id="listenAudio" preload="auto" src="{{ audio_parts[0] }}"></audio>
           </div>
           {% endif %}
           {% endif %}
@@ -565,49 +579,29 @@ function selectOpt(label) {
 // Init: start at listening step
 showStep(0);
 
-// Audio: plays ONCE (no rewind, no restart after finish), but pause/resume allowed
-document.addEventListener('DOMContentLoaded', function() {
-  var audios = document.querySelectorAll('.audio-player audio');
-  audios.forEach(function(a) {
-    var audioEnded = false;
-    var lastTime = 0;
-
-    // Block seeking BACKWARD (rewind). Forward seeking is also disabled for simplicity.
-    a.addEventListener('seeking', function() {
-      // If user tries to go back before where they've been, force forward to lastTime
-      if (this.currentTime < lastTime) {
-        this.currentTime = lastTime;
-      }
-    });
-
-    a.addEventListener('timeupdate', function() {
-      if (this.currentTime > lastTime) lastTime = this.currentTime;
-    });
-
-    // Allow play always EXCEPT after the audio has fully ended (no restart)
-    a.addEventListener('play', function() {
-      if (audioEnded) {
-        this.pause();
-        this.currentTime = this.duration; // stay at end
-        alert('⚠️ Audio tugadi — qayta eshitib bo\'lmaydi!');
-        return;
-      }
-      // First real play: mark it
-      if (!this.dataset.started) {
-        this.dataset.started = '1';
-        var label = document.querySelector('.audio-label');
-        if (label) label.textContent = '🔊 Audio eshitilmoqda...';
-      }
-    });
-
-    // When audio finishes — no restart allowed
-    a.addEventListener('ended', function() {
-      audioEnded = true;
-      var label = document.querySelector('.audio-label');
-      if (label) label.textContent = '🔊 Audio eshitildi ✓';
-    });
+// Listening audio: play once via a simple button (no controls, no seeking)
+var listeningStarted = false;
+function playListeningAudio(btn) {
+  var audio = document.getElementById('listenAudio');
+  if (!audio) return;
+  if (listeningStarted) {
+    // Audio already played — cannot replay
+    alert('⚠️ Audio faqat bir marta eshitiladi!');
+    return;
+  }
+  listeningStarted = true;
+  btn.classList.add('played');
+  btn.textContent = '🔊 Eshitilmoqda...';
+  audio.play().catch(function() {
+    // In case of autoplay policy issue, still mark as started
+    setTimeout(function() {
+      btn.textContent = '🔊 Audio eshitildi ✓';
+    }, 500);
   });
-});
+  audio.addEventListener('ended', function() {
+    btn.textContent = '🔊 Audio eshitildi ✓';
+  });
+}
 </script>
 
 {% endblock %}
