@@ -134,6 +134,23 @@
                 Telegram.WebApp.expand();
                 Telegram.WebApp.setHeaderColor('#7C3AED');
                 Telegram.WebApp.setBackgroundColor('#F8F6FC');
+
+                // Auto-login via WebApp initData (mini app only)
+                if (Telegram.WebApp.initData && !document.body.dataset.tgLogged) {
+                    fetch('{{ url_for("auth.telegram_webapp_login") }}', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: 'initData=' + encodeURIComponent(Telegram.WebApp.initData)
+                    }).then(r => r.json()).then(d => {
+                        if (d.ok) {
+                            document.body.dataset.tgLogged = '1';
+                            // Redirect to tests page if on a public page
+                            const isAuthPage = location.pathname.includes('/auth/');
+                            if (isAuthPage) location.href = '{{ url_for("tests.test_list") }}';
+                            else location.reload();
+                        }
+                    }).catch(() => {});
+                }
             } catch (e) {}
         }
 

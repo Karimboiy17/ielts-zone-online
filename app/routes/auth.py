@@ -172,6 +172,53 @@ def telegram_login_link():
     return redirect(url_for("main.index"))
 
 
+@auth_bp.route("/telegram-webapp-login", methods=["POST"])
+def telegram_webapp_login():
+    """Auto-login from Telegram Mini App via WebApp initData."""
+    import json as _json
+    from app.tg_webapp import validate_init_data
+
+    init_data = request.form.get("initData", "") or request.headers.get("X-Telegram-Init-Data", "")
+    bot_token = current_app.config.get("BOT_TOKEN", "")
+    if not init_data or not bot_token:
+        return jsonify({"ok": False, "error": "No initData"}), 400
+
+    try:
+        tg_user = validate_init_data(init_data, bot_token)
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 403
+
+    if not tg_user:
+        return jsonify({"ok": False, "error": "No user in initData"}), 403
+
+    tg_id = str(tg_user.get("id", ""))
+    tg_username = tg_user.get("username", "")
+    first_name = tg_user.get("first_name", "Student")
+    last_name = tg_user.get("last_name", "")
+
+    # Find or create user by telegram_id
+    user = User.get_by_telegram_id(tg_id)
+    if not user:
+        email = f"tg{tg_id}@telegram.local"
+        username = f"tg_{tg_id}"
+        base = username
+        counter = 1
+        while User.get_by_username(username):
+            username = f"{base}{counter}"
+            counter += 1
+        from werkzeug.security import generate_password_hash as gph
+        import secrets as _secrets
+        user = User.create(first_name, email, gph(_secrets.token_hex(16)), f"@{tg_username}" if tg_username else "", username)
+        # Link telegram_id
+        mongo.db.users.update_one(
+            {"_id": __import__("bson.objectid", fromlist=["ObjectId"]).ObjectId(user.id)},
+            {"$set": {"telegram_id": tg_id}}
+        )
+
+    login_user(user, remember=True)
+    return jsonify({"ok": True, "name": user.name, "id": user.id})
+
+
 @auth_bp.route("/logout")
 @login_required
 def logout():

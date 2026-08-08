@@ -15,8 +15,8 @@ class Config:
     # Narx
     TEST_PRICE = int(os.getenv("TEST_PRICE", "50000"))
     # Telegram bot username (redirect)
-    TELEGRAM_BOT = "@IELTSZoneOnlineBot"
-    TELEGRAM_BOT_URL = "https://t.me/IELTSZoneOnlineBot"
+    TELEGRAM_BOT = "@ieltszonemidtestbot"
+    TELEGRAM_BOT_URL = "https://t.me/ieltszonemidtestbot"
 
     # Admin Telegram chat ID (for payment notifications)
     ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", os.getenv("ADMIN_TELEGRAM_ID", ""))

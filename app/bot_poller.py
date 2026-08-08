@@ -7,13 +7,13 @@ from datetime import datetime, timezone, timedelta
 logger = logging.getLogger(__name__)
 _ACTIVE = True
 
-def _main_menu():
+def _main_menu(site_url=""):
     return {"inline_keyboard": [
+        [{"text": "📝 Imtihonni boshlash", "web_app": {"url": site_url}}],
         [{"text": "🔑 Ro'yxatdan o'tish kodi", "callback_data": "code"},
-         {"text": "💳 To'lov", "callback_data": "pay"}],
-        [{"text": "📊 Testlarim", "callback_data": "status"},
-         {"text": "👤 Profil", "callback_data": "profile"}],
-        [{"text": "❓ Yordam", "callback_data": "help"}],
+         {"text": "📊 Testlarim", "callback_data": "status"}],
+        [{"text": "👤 Profil", "callback_data": "profile"},
+         {"text": "❓ Yordam", "callback_data": "help"}],
     ]}
 
 def _api(app, method, data, timeout=10):
@@ -30,7 +30,8 @@ def _send(app, chat_id, text, kb=None):
     _api(app, "sendMessage", p)
 
 def _menu(app, chat_id, text):
-    _send(app, chat_id, text, _main_menu())
+    site_url = app.config.get("SITE_URL", "")
+    _send(app, chat_id, text, _main_menu(site_url))
 
 def start_poller(app):
     t = threading.Thread(target=_loop, args=(app,), daemon=True)
@@ -83,14 +84,16 @@ def _handle(app, update):
             "created_at": datetime.now(timezone.utc),
             "expires_at": datetime.now(timezone.utc) + timedelta(minutes=10),
         })
+        site_url = app.config.get("SITE_URL", "")
         _send(app, chat_id,
             f"👋 Assalomu alaykum, {fname}!\n\n"
-            f"📋 Ro'yxatdan o'tish kodi: <code>{code}</code>\n\n"
-            f"1. Saytga o'ting va ro'yxatdan o'ting\n"
-            f"2. Kodni kiriting\n"
-            f"3. Tayyor!\n\n"
+            f"📝 <b>Imtihonni boshlash</b> tugmasini bosing — testlar Telegram ichida ochiladi.\n\n"
+            f"🔑 Ro'yxatdan o'tish kodi: <code>{code}</code>\n\n"
+            f"1. Imtihonni boshlang\n"
+            f"2. Ro'yxatdan o'ting (ism + kod)\n"
+            f"3. Testni topshiring!\n\n"
             f"⏳ Kod 10 daqiqa amal qiladi.",
-            _main_menu())
+            _main_menu(site_url))
         return
 
     if msg.get("photo"):
