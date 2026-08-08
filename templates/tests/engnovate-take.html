@@ -78,6 +78,8 @@ body { background: var(--bg-secondary); }
   .btn-review { padding: 10px 14px; font-size: 13px; }
   .writing-textarea { min-height: 160px; font-size: 15px; }
   .q-picture-row .option-item { padding: 10px 12px; }
+  .pic-option { padding: 6px; }
+  .pic-option .pic-letter { width: 24px; height: 24px; font-size: 12px; }
 }
 
 /* PART CARD */
@@ -189,6 +191,41 @@ body { background: var(--bg-secondary); }
 
 /* option items (radio cards) */
 .option-list { display: flex; flex-direction: column; gap: 6px; }
+
+/* picture options: click the image to select */
+.pic-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.pic-option {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pic-option img {
+  width: 100%; height: auto;
+  border-radius: 6px;
+  pointer-events: none;
+}
+.pic-option .pic-letter {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px;
+  background: var(--bg-secondary); color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.pic-option:hover { border-color: var(--red); }
+.pic-option.selected {
+  border-color: var(--red);
+  background: var(--red-bg);
+}
+.pic-option.selected .pic-letter { background: var(--red); color: #fff; }
 .option-item {
   display: flex; align-items: center; gap: 14px;
   padding: 12px 16px;
@@ -385,7 +422,20 @@ body { background: var(--bg-secondary); }
           {% for item in question.get('items', []) %}
           {% set ii = loop.index0 %}
           <div class="q-item">
-            {% if item.get('image') %}
+            {% if item.get('option_images') %}
+            <!-- Picture options: click the image to select -->
+            <div class="q-text">{{ item.q }}</div>
+            <div class="pic-options">
+              {% for opt_img in item.option_images %}
+              {% set oi = loop.index0 %}
+              <label class="pic-option" onclick="selectPicOption(this, {{ oi }})">
+                <img src="{{ opt_img }}" alt="Option {{ ['A','B','C','D'][oi] }}">
+                <span class="pic-letter">{{ ['A','B','C','D'][oi] }}</span>
+                <input type="radio" name="q{{ qi }}_i{{ ii }}" value="{{ oi }}" style="display:none;">
+              </label>
+              {% endfor %}
+            </div>
+            {% elif item.get('image') %}
             <div class="q-picture-row">
               <div class="q-picture-left">
                 <img src="{{ item.image }}" alt="Question image">
@@ -613,6 +663,16 @@ function submitForm() {
 function selectOpt(label) {
   const parent = label.closest('.option-list');
   parent.querySelectorAll('.option-item').forEach(o => {
+    o.classList.remove('selected');
+    o.querySelector('input[type="radio"]').checked = false;
+  });
+  label.classList.add('selected');
+  label.querySelector('input[type="radio"]').checked = true;
+}
+
+function selectPicOption(label, optIdx) {
+  const parent = label.closest('.pic-options');
+  parent.querySelectorAll('.pic-option').forEach(o => {
     o.classList.remove('selected');
     o.querySelector('input[type="radio"]').checked = false;
   });
