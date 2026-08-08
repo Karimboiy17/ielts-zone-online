@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ module.title_uz }}{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:64px;">
+  <div class="container" style="max-width:700px;">
+    <div style="margin-bottom:24px;font-size:13px;color:var(--text-muted);font-weight:600;">
+      <a href="/cefr" style="color:var(--text-muted);">{{ _('cefr_page.back') }}</a> ›
+      <a href="/cefr-level?code={{ level.code }}" style="color:var(--text-muted);">{{ level.code }}</a> ›
+      <span style="color:var(--text);">{{ module.title_uz }}</span>
+    </div>
+
+    <div class="card" style="margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+        <span class="btn btn-sm btn-outline" style="pointer-events:none;">{{ level.icon }} {{ level.code }}</span>
+        <span class="btn btn-sm btn-blue" style="pointer-events:none;">{{ lessons|length }} {{ _('cefr_page.lessons_count') }}</span>
+      </div>
+      <p style="color:var(--text-secondary);font-size:14px;line-height:1.6;">{{ module.desc_uz }}</p>
+    </div>
+
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;">📖 {{ _('cefr_page.lessons') }}</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      {% for lesson in lessons %}
+      <a href="/cefr-lesson?level={{ level.code }}&module={{ module.id }}&lesson={{ lesson.order_num }}" class="test-card test-card-row" style="text-decoration:none;color:inherit;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;">{{ lesson.order_num + 1 }}</div>
+        <div class="test-card-info">
+          <h3 style="font-size:15px;">{{ lesson.title_uz }}</h3>
+        </div>
+        <span style="font-size:14px;color:var(--red);font-weight:700;">{{ _('cefr_page.start_lesson') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

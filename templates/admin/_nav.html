@@ -1,0 +1,28 @@
+<!-- Admin Navigation -->
+<nav style="display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;border-bottom:2px solid var(--bg-secondary);padding-bottom:12px;">
+  <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link {{ 'active' if request.endpoint == 'admin.dashboard' else '' }}">📊 {{ _('admin_nav.dashboard') }}</a>
+  <a href="{{ url_for('admin.test_list') }}" class="admin-nav-link {{ 'active' if request.endpoint in ('admin.test_list', 'admin.test_new', 'admin.test_edit') else '' }}">🧪 {{ _('admin_nav.tests') }}</a>
+  <a href="{{ url_for('admin.user_list') }}" class="admin-nav-link {{ 'active' if request.endpoint in ('admin.user_list', 'admin.user_detail') else '' }}">👥 {{ _('admin_nav.users') }}</a>
+  <a href="{{ url_for('admin.payment_pending') }}" class="admin-nav-link {{ 'active' if request.endpoint in ('admin.payment_pending',) else '' }}">💰 {{ _('admin_nav.payments') }}</a>
+  <a href="{{ url_for('admin.writing_pending') }}" class="admin-nav-link {{ 'active' if request.endpoint in ('admin.writing_pending',) else '' }}">✍️ {{ _('admin_nav.writing') }}</a>
+</nav>
+
+<style>
+.admin-nav-link {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.admin-nav-link:hover {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+.admin-nav-link.active {
+  background: var(--red-bg);
+  color: var(--red);
+}
+</style>

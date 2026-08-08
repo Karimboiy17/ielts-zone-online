@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ _('home') }}{% endblock %} — IELTS ZONE online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=31">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{{ 'dark-mode' if dark_mode else '' }}">
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="{{ url_for('main.index') }}" class="logo">
+                <div class="logo-icon">IZ</div>
+                <span class="logo-text">IELTS <span>ZONE online</span></span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('tests.test_list') }}" class="{% if request.endpoint and 'tests' in request.endpoint %}active{% endif %}">{{ _('nav.tests') }}</a></li>
+                {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('profile.profile') }}">{{ _('nav.results') }}</a></li>
+                {% if current_user.is_admin %}
+                <li><a href="{{ url_for('admin.dashboard') }}" style="color: var(--purple);">{{ _('nav.admin') }}</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('auth.logout') }}" class="btn-outline btn-sm" style="padding: 8px 16px;">{{ _('nav.logout') }}</a></li>
+                {% else %}
+                <li><a href="{{ url_for('auth.login') }}">{{ _('nav.login') }}</a></li>
+                <li><a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">{{ _('nav.register') }}</a></li>
+                {% endif %}
+            </ul>
+            <div class="nav-right">
+                <!-- Dark Mode Toggle (standalone) -->
+                <button class="dm-btn" onclick="toggleDarkMode()" aria-label="{{ _('dark_mode') }}" title="{{ _('dark_mode') }}">
+                    <span id="dmIcon">🌙</span>
+                </button>
+                <!-- Language Selector -->
+                <div class="lang-selector">
+                    <button class="lang-btn" onclick="toggleLangMenu()" aria-label="Language">
+                        {% for code, flag in lang_flags.items() %}
+                            {% if code == lang %}{{ flag }}{% endif %}
+                        {% endfor %}
+                    </button>
+                    <div class="lang-menu" id="langMenu">
+                        {% for code, name in langs.items() %}
+                        <a href="{{ url_for('main.set_lang', code=code) }}" class="lang-option {% if code == lang %}active{% endif %}">
+                            <span>{{ lang_flags[code] }}</span> {{ name }}
+                        </a>{% endfor %}
+                    </div>
+                </div>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Menu">☰</button>
+            </div>
+        </div>
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="{{ url_for('tests.test_list') }}">{{ _('nav.tests') }}</a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('profile.profile') }}">{{ _('nav.results') }}</a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}">{{ _('nav.admin') }}</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}">{{ _('nav.logout') }}</a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}">{{ _('nav.login') }}</a>
+            <a href="{{ url_for('auth.register') }}">{{ _('nav.register') }}</a>
+            {% endif %}
+            <div class="mobile-lang-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;">
+                {% for code, name in langs.items() %}
+                <a href="{{ url_for('main.set_lang', code=code) }}" class="btn btn-{% if code == lang %}primary{% else %}outline{% endif %} btn-sm" style="font-size:12px;">{{ lang_flags[code] }} {{ name }}</a>
+                {% endfor %}
+                <button onclick="toggleDarkMode()" class="btn btn-outline btn-sm" style="font-size:12px;">🌙 {{ _('dark_mode') }}</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()" class="flash-close">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="logo-text">IELTS <span>ZONE online</span></span>
+                <p>{{ _('footer.tagline') }}</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>{{ _('footer.sections') }}</h4>
+                    <a href="{{ url_for('tests.test_list') }}">{{ _('nav.tests') }}</a>
+                    <a href="{{ url_for('profile.profile') }}">{{ _('nav.results') }}</a>
+                </div>
+                <div class="footer-col">
+                    <h4>{{ _('footer.contact') }}</h4>
+                    <a href="{{ telegram_bot_url }}" target="_blank">Telegram: {{ telegram_bot }}</a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('profile.profile') }}">{{ _('nav.results') }}</a>
+                    {% else %}
+                    <a href="{{ url_for('auth.register') }}">{{ _('nav.register') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© {{ now().year if now is defined else "2024" }} IELTS ZONE online. {{ _('footer.rights') }}</p>
+        </div>
+    </footer>
+
+    <form id="dmForm" action="{{ url_for('main.toggle_dark') }}" method="post" style="display:none;">
+    </form>
+
+    <script>
+        // Telegram Mini App init — expand to full screen when opened inside Telegram
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+                Telegram.WebApp.setHeaderColor('#7C3AED');
+                Telegram.WebApp.setBackgroundColor('#F8F6FC');
+            } catch (e) {}
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+        }
+
+        function toggleLangMenu() {
+            const m = document.getElementById('langMenu');
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.lang-selector')) {
+                document.getElementById('langMenu').style.display = 'none';
+            }
+        });
+
+        function toggleDarkMode() {
+            document.getElementById('dmForm').submit();
+        }
+
+        // Auto-dismiss flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                document.querySelectorAll('.flash-message').forEach(function(el) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(-10px)';
+                    setTimeout(function() { el.remove(); }, 300);
+                });
+            }, 5000);
+        });
+
+        // Navbar scroll shadow
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbar = document.querySelector('.navbar');
+            window.addEventListener('scroll', function() {
+                navbar.style.boxShadow = window.scrollY > 20 ? '0 2px 12px rgba(0,0,0,0.08)' : 'none';
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

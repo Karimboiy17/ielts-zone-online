@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ _('admin_payments.title') }}{% endblock %}
+{% block content %}
+<section class="section" style="max-width:720px;margin:0 auto;padding:40px 20px;">
+  {% include "admin/_nav.html" %}
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:24px;font-weight:900;margin-bottom:4px;">💰 {{ _('admin_payments.title') }}</h1>
+      <p style="color:var(--gray-600);font-size:14px;">{{ _('admin_payments.desc') }}</p>
+    </div>
+    <span style="background:var(--orange-bg);color:var(--orange-dark);padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;">{{ pending|length }} ta</span>
+  </div>
+
+  {% if pending %}
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for p in pending %}
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+        <div>
+          <strong style="font-size:16px;">🧪 {{ p.test_title }}</strong>
+          <div style="display:flex;gap:16px;margin-top:6px;font-size:13px;color:var(--gray-600);flex-wrap:wrap;">
+            <span>👤 {{ p.user.username if p.user else _('common.unknown') }}</span>
+            <span>📧 {{ p.user.email if p.user else '—' }}</span>
+            <span>🆔 {{ p._id }}</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px;font-weight:800;color:var(--red);">{{ config.TEST_PRICE|int|string }} {{ _('suffix.sum') }}</div>
+          <div style="font-size:12px;color:var(--gray-500);">{{ p.paid_at.strftime('%d.%m.%Y %H:%M') if p.paid_at else _('common.unknown') }}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        {% if p.check_link %}
+        <a href="{{ p.check_link }}" target="_blank" class="btn" style="background:var(--accent);border:none;border-radius:12px;color:#fff;font-weight:600;padding:10px 18px;font-size:13px;text-decoration:none;">🔍 {{ _('admin_payments.view_check') }}</a>
+        {% endif %}
+        <a href="{{ url_for('admin.approve_payment', attempt_id=p._id) }}" class="btn" style="background:var(--green);border:none;border-radius:12px;color:#fff;font-weight:700;padding:10px 24px;font-size:14px;text-decoration:none;box-shadow:0 4px 12px rgba(76,175,80,0.3);">✅ {{ _('admin_payments.approve') }}</a>
+        <a href="{{ url_for('admin.reject_payment', attempt_id=p._id) }}" class="btn" style="background:#EF4444;border:none;border-radius:12px;color:#fff;font-weight:700;padding:10px 24px;font-size:14px;text-decoration:none;box-shadow:0 4px 12px rgba(239,68,68,0.3);">❌ {{ _('admin_payments.reject') }}</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:60px 20px;">
+    <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+    <h3 style="font-weight:800;margin-bottom:4px;">{{ _('admin_payments.all_approved') }}</h3>
+    <p style="color:var(--gray-600);font-size:14px;">{{ _('admin_payments.pending_message') }}</p>
+  </div>
+  {% endif %}
+
+  <div style="margin-top:24px;">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline" style="border-radius:12px;">{{ _('admin_payments.back') }}</a>
+  </div>
+</section>
+{% endblock %}

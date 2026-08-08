@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ level.code }} — {{ level.name_uz }}{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:64px;">
+  <div class="container" style="max-width:700px;">
+    <div style="margin-bottom:24px;">
+      <a href="/cefr" style="color:var(--text-muted);font-size:13px;font-weight:600;">← {{ _('cefr_page.back') }}</a>
+    </div>
+
+    <div class="card" style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:8px;">{{ level.icon }}</div>
+      <h1 style="font-size:32px;font-weight:900;">{{ level.code }}</h1>
+      <p style="color:var(--text-secondary);font-size:15px;">{{ level.name_uz }}</p>
+      <p style="color:var(--text-muted);font-size:13px;margin-top:8px;">{{ level.desc_uz }}</p>
+    </div>
+
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;">📖 {{ _('cefr_page.modules') }}</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for module in modules %}
+      <a href="/cefr-module?level={{ level.code }}&module={{ module.id }}" class="test-card test-card-row" style="text-decoration:none;color:inherit;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--red);flex-shrink:0;">{{ loop.index }}</div>
+        <div class="test-card-info">
+          <h3>{{ module.title_uz }}</h3>
+          <p>{{ module.lesson_count }} {{ _('cefr_page.lessons_count') }}</p>
+        </div>
+        <span style="font-size:18px;color:var(--text-muted);">→</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ test.title }} Test{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="test-detail">
+        <div class="test-detail-header">
+            <div class="test-detail-icon {{ section }}">{{ test.icon }}</div>
+            <div>
+                <h1>{{ test.title }} Test</h1>
+                <div class="test-detail-meta">
+                    <span>⏱️ {{ test.time_limit }} {{ _('test.duration') }}</span>
+                    <span>📝 {{ test.questions|length }} {{ _('test.questions') }}</span>
+                    <span>💰 <span class="orig-price">{{ test.original_price|default(25000)|int|string }}</span> <span class="cur-price">{{ test.discount_price|default(test.price|default(15000))|int|string }}</span> so'm</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-detail-info">
+            <h3>Test haqida</h3>
+            <p>
+                {% if section == 'reading' %}
+                    Bu testda siz matn o'qish va tushunish qobiliyatingizni sinaysiz.
+                    Har bir savol uchun 4 ta variant beriladi. To'g'ri javobni tanlang.
+                    Natija darhol ko'rsatiladi.
+                {% elif section == 'listening' %}
+                    Bu testda siz audio matnlarni tinglab tushunish qobiliyatingizni sinaysiz.
+                    (Hozircha matn ko'rinishida). Har bir savol uchun 4 ta variant.
+                    Natija darhol ko'rsatiladi.
+                {% elif section == 'writing' %}
+                    Bu testda siz ikkita writing topshirig'ini bajarasiz.
+                    Javoblaringiz mutaxassis tomonidan 2 kun ichida tekshiriladi va ball qo'yiladi.
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="test-detail-actions">
+            <form method="POST" action="{{ url_for('tests.start_test', section=section) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">
+                🚀 {{ _('hero.start_test') }}
+              </button>
+            </form>
+            <p class="test-detail-note">
+                To'lov <strong>Telegram</strong> orqali amalga oshiriladi. 
+                Chekni botga yuborasiz, admin tasdiqlaydi.
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

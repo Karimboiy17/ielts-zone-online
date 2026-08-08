@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEFR Mock — Cambridge Style</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --cambridge-red: #C8102E;
+            --cambridge-red-hover: #A00D24;
+            --cambridge-red-light: #FFF0F0;
+            --dark: #1E1E1E;
+            --gray-100: #F8F8F8;
+            --gray-200: #F0F0F0;
+            --gray-300: #E0E0E0;
+            --gray-500: #999;
+            --gray-700: #555;
+            --gray-900: #222;
+            --white: #FFFFFF;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-hover: 0 6px 24px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Open Sans', -apple-system, sans-serif;
+            background: var(--gray-100);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            background: var(--white);
+            border-bottom: 3px solid var(--cambridge-red);
+            padding: 0 40px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        .navbar .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .navbar .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--cambridge-red);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .navbar .logo-text {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--dark);
+        }
+        .navbar .logo-text span {
+            color: var(--cambridge-red);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--gray-700);
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .nav-links a:hover {
+            color: var(--cambridge-red);
+        }
+        .nav-links a.active {
+            color: var(--cambridge-red);
+        }
+
+        .btn-primary {
+            background: var(--cambridge-red);
+            color: white !important;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, transform 0.15s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background: var(--cambridge-red-hover);
+            transform: translateY(-1px);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: linear-gradient(135deg, #C8102E 0%, #A00D24 50%, #7A0A1B 100%);
+            color: white;
+            text-align: center;
+            padding: 80px 40px 70px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .hero p {
+            font-size: 18px;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(4px);
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== FEATURES SECTION ===== */
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .section-title h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .section-title p {
+            color: var(--gray-700);
+            font-size: 16px;
+            margin-top: 8px;
+        }
+        .section-title .accent-line {
+            width: 60px;
+            height: 4px;
+            background: var(--cambridge-red);
+            margin: 16px auto 0;
+            border-radius: 2px;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 28px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-top: 4px solid var(--cambridge-red);
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        .card-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--cambridge-red-light);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 18px;
+            color: var(--cambridge-red);
+        }
+        .card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .card p {
+            color: var(--gray-700);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        .card .price-tag {
+            display: inline-block;
+            margin-top: 14px;
+            background: var(--cambridge-red);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* ===== MOCK TEST LIST ===== */
+        .test-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .test-item {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .test-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .test-icon {
+            width: 60px;
+            height: 60px;
+            min-width: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+        }
+        .test-icon.reading { background: #E8F4FD; color: #1A73E8; }
+        .test-icon.listening { background: #E8F8E8; color: #2E7D32; }
+        .test-icon.writing { background: #FFF3E0; color: #E65100; }
+        .test-icon.speaking { background: #F3E5F5; color: #7B1FA2; }
+
+        .test-info { flex: 1; }
+        .test-info h3 { font-size: 17px; font-weight: 700; }
+        .test-info .meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+        .test-info .meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .test-price {
+            font-weight: 800;
+            font-size: 20px;
+            color: var(--cambridge-red);
+            white-space: nowrap;
+        }
+        .test-price small {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--gray-500);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--cambridge-red);
+            color: var(--cambridge-red);
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .btn-outline:hover {
+            background: var(--cambridge-red);
+            color: white;
+        }
+
+        .coming-soon {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .coming-soon .btn-outline {
+            border-color: var(--gray-300);
+            color: var(--gray-500);
+        }
+        .coming-soon .badge-soon {
+            display: inline-block;
+            background: var(--gray-200);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+        }
+
+        /* ===== HOW IT WORKS ===== */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            counter-reset: step;
+        }
+
+        .step {
+            text-align: center;
+            padding: 28px 20px;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            width: 40px;
+            height: 40px;
+            background: var(--cambridge-red);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            margin: 0 auto 16px;
+        }
+        .step h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .step p {
+            font-size: 13px;
+            color: var(--gray-700);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: #1E1E1E;
+            color: rgba(255,255,255,0.7);
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        .footer .logo-text {
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .footer .logo-text span { color: var(--cambridge-red); }
+        .footer p { font-size: 13px; margin-top: 8px; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .nav-links { display: none; }
+            .hero { padding: 50px 24px; }
+            .hero h1 { font-size: 32px; }
+            .section { padding: 40px 20px; }
+            .test-item { flex-wrap: wrap; }
+            .test-price { width: 100%; text-align: right; }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="#" class="logo">
+            <div class="logo-icon">CM</div>
+            <div class="logo-text">CEFR <span>Mock</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Bosh sahifa</a></li>
+            <li><a href="#">Testlar</a></li>
+            <li><a href="#">Natijalar</a></li>
+            <li><a href="#">Yordam</a></li>
+            <li><a href="#" class="btn-primary">Kirish</a></li>
+        </ul>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-badge">🇬🇧 O'zbekistonda ingliz tili imtihoniga tayyorgarlik</div>
+        <h1>CEFR Mock Test</h1>
+        <p>Haqiqiy imtihonga o'xshash testlar bilan ingliz tilingizni sinab ko'ring va yuqori ball oling.</p>
+        <a href="#" class="btn-primary" style="font-size: 15px !important; padding: 14px 36px;">Testni boshlash</a>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section">
+        <div class="section-title">
+            <h2>Nega aynan biz?</h2>
+            <p>Cambridge uslubidagi professional test tizimi</p>
+            <div class="accent-line"></div>
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-icon">📖</div>
+                <h3>Haqiqiy Format</h3>
+                <p>Testlar Cambridge imtihoniga moslashtirilgan — real imtihondagidek savollar va vaqt chegarasi.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">🎯</div>
+                <h3>Aniq Natijalar</h3>
+                <p>Har bir bo'lim uchun batafsil natija va xatolaringiz tahlili bilan.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">💰</div>
+                <h3>Qulay Narx</h3>
+                <p>Har bir section atigi <strong>15,000 so'm</strong>. Speaking tez kunda!</p>
+                <div class="price-tag">15,000 so'm</div>
+            </div>
+            <div class="card">
+                <div class="card-icon">⏱️</div>
+                <h3>Writing Tekshiruvi</h3>
+                <p>Writing javoblaringizni 2 kun ichida mutaxassis tekshirib, natija yuboramiz.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MOCK TESTS -->
+    <section class="section" style="padding-top: 0;">
+        <div class="section-title">
+            <h2>Test turlari</h2>
+            <p>O'zingizga kerakli bo'limni tanlang</p>
+            <div class="accent-line"></div>
+        </div>
+        <div class="test-list">
+            <div class="test-item">
+                <div class="test-icon reading">📖</div>
+                <div class="test-info">
+                    <h3>Reading</h3>
+                    <div class="meta">
+                        <span>⏱️ 60 min</span>
+                        <span>📝 40 ta savol</span>
+                    </div>
+                </div>
+                <div class="test-price">15,000 <small>so'm</small></div>
+                <button class="btn-outline">Boshlash</button>
+            </div>
+
+            <div class="test-item">
+                <div class="test-icon listening">🎧</div>
+                <div class="test-info">
+                    <h3>Listening</h3>
+                    <div class="meta">
+                        <span>⏱️ 40 min</span>
+                        <span>📝 30 ta savol</span>
+                    </div>
+                </div>
+                <div class="test-price">15,000 <small>so'm</small></div>
+                <button class="btn-outline">Boshlash</button>
+            </div>
+
+            <div class="test-item">
+                <div class="test-icon writing">✍️</div>
+                <div class="test-info">
+                    <h3>Writing</h3>
+                    <div class="meta">
+                        <span>⏱️ 60 min</span>
+                        <span>📝 2 ta topic</span>
+                    </div>
+                </div>
+                <div class="test-price">15,000 <small>so'm</small></div>
+                <button class="btn-outline">Boshlash</button>
+            </div>
+
+            <div class="test-item coming-soon">
+                <div class="test-icon speaking">🎙️</div>
+                <div class="test-info">
+                    <h3>Speaking <span class="badge-soon">Coming Soon</span></h3>
+                    <div class="meta">
+                        <span>⏱️ 15 min</span>
+                        <span>🎤 3 qism</span>
+                    </div>
+                </div>
+                <div class="test-price">—</div>
+                <button class="btn-outline">Tez orada</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section" style="padding-top: 0;">
+        <div class="section-title">
+            <h2>Qanday ishlaydi?</h2>
+            <p>3 oddiy qadam</p>
+            <div class="accent-line"></div>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <h4>Testni tanlang</h4>
+                <p>Reading, Listening yoki Writing bo'limini tanlang</p>
+            </div>
+            <div class="step">
+                <h4>To'lov qiling</h4>
+                <p>15,000 so'm to'lab, testni boshlang</p>
+            </div>
+            <div class="step">
+                <h4>Natijani oling</h4>
+                <p>Darhol natijangizni ko'ring (Writing uchun 2 kun)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="logo-text">CEFR <span>Mock</span></div>
+        <p>© 2024 CEFR Mock — Ingliz tili imtihoniga tayyorgarlik platformasi</p>
+    </footer>
+</body>
+</html>

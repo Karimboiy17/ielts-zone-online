@@ -1,0 +1,779 @@
+{% extends "base.html" %}
+{% block title %}IELTS Test — Savol {{ q_index + 1 }}/{{ total }}{% endblock %}
+{% block extra_head %}
+<style>
+/* Full-screen test layout — IELTS ZONE online theme */
+html, body { height: 100%; margin: 0; overflow: hidden; height: -webkit-fill-available; }
+.navbar, .footer, .mobile-menu-btn { display: none !important; }
+body { background: var(--bg); }
+main { padding: 0 !important; margin: 0 !important; }
+
+.test-wrapper {
+  display: flex; flex-direction: column; height: 100vh;
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+}
+
+/* === TOP BAR === */
+.test-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px;
+  background: var(--bg-secondary); color: var(--text);
+  border-bottom: 2px solid var(--red);
+  flex-shrink: 0;
+}
+.topbar-left { display: flex; align-items: center; gap: 32px; }
+.topbar-candidate { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+.topbar-candidate strong { color: var(--text); font-size: 13px; display: block; }
+.topbar-section select {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid var(--red);
+  background: var(--card-bg); color: var(--text); font-size: 14px; font-weight: 600;
+  cursor: pointer; outline: none;
+}
+.topbar-right { display: flex; align-items: center; gap: 20px; }
+.topbar-timer {
+  font-size: 28px; font-weight: 700; font-family: 'Courier New', monospace;
+  color: var(--red); letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(222,53,50,0.3);
+}
+.topbar-timer.warning { color: #ff6b35; }
+.topbar-timer.danger { color: #ef4444; animation: blink 1s infinite; }
+.topbar-help {
+  padding: 6px 16px; border: 1px solid var(--red); border-radius: 6px;
+  background: transparent; color: var(--red); cursor: pointer; font-size: 13px;
+}
+.topbar-help:hover { background: var(--red-bg); }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* === MAIN CONTENT === */
+.test-content {
+  flex: 1; overflow-y: auto; padding: 24px;
+  background: var(--bg); min-height: 0;
+  display: flex; flex-direction: column;
+}
+.test-question-card {
+  background: var(--card-bg); border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 28px 32px; flex: 1;
+}
+.test-question-number {
+  font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+.test-question-section {
+  display: inline-block; padding: 3px 12px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; margin-left: 12px;
+  background: var(--bg-secondary); color: var(--text-secondary);
+}
+.test-question-text {
+  font-size: 17px; font-weight: 600; color: var(--text);
+  line-height: 1.6; margin-bottom: 20px;
+}
+.test-passage-box {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; margin-bottom: 20px;
+  font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-height: 60vh; overflow-y: auto;
+}
+
+/* Option items */
+.option-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border: 2px solid var(--border); border-radius: 10px;
+  cursor: pointer; transition: all 0.15s; margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+.option-item:hover { border-color: var(--red); background: var(--red-bg); }
+.option-item.selected { border-color: var(--red); background: var(--red-bg); }
+.option-item .opt-letter {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; flex-shrink: 0;
+  background: var(--bg-secondary); color: var(--text-secondary); transition: all 0.15s;
+}
+.option-item.selected .opt-letter { background: var(--red); color: #fff; }
+
+/* Matching selects */
+.matching-select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--bg-secondary); color: var(--text); }
+
+/* Textarea writing */
+.writing-textarea { width: 100%; min-height: 180px; padding: 16px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; resize: vertical; font-family: inherit; background: var(--bg-secondary); color: var(--text); }
+.writing-textarea:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-bg); outline: none; }
+
+/* === BOTTOM BAR === */
+.test-bottombar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 24px; background: var(--bg-secondary);
+  border-top: 2px solid var(--red);
+  flex-shrink: 0;
+}
+.question-grid {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  flex: 1; max-height: 60px; overflow-y: auto;
+}
+.q-grid-btn {
+  min-width: 36px; height: 32px; border-radius: 6px;
+  border: 1.5px solid var(--border); background: var(--card-bg);
+  font-size: 11px; font-weight: 700; cursor: pointer; color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; padding: 0 6px; white-space: nowrap;
+}
+.q-grid-btn:hover { border-color: var(--red); }
+.q-grid-btn.current { border-color: var(--red); background: var(--red-bg); color: var(--red); }
+.q-grid-btn.answered { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.q-grid-btn.marked { background: #e65100; color: #fff; border-color: #e65100; }
+
+.nav-btn {
+  padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 700;
+  border: 1.5px solid var(--border); background: var(--card-bg); cursor: pointer; white-space: nowrap;
+  transition: all 0.15s; color: var(--text-secondary);
+}
+.nav-btn:hover { background: var(--bg-secondary); }
+.nav-btn-primary {
+  background: var(--red); color: #fff; border: none;
+  padding: 10px 28px;
+}
+.nav-btn-primary:hover { background: var(--red-dark, #c52e2b); }
+.nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.review-checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); cursor: pointer; padding: 6px 12px; border-radius: 6px; }
+.review-checkbox input { width: 16px; height: 16px; accent-color: #ff9800; }
+
+/* Section badge colors */
+.section-reading { background: var(--red-bg); color: var(--red); }
+.section-listening { background: rgba(255,152,0,0.15); color: #ff9800; }
+.section-grammar { background: rgba(156,39,176,0.15); color: #ce93d8; }
+.section-writing { background: rgba(76,175,80,0.15); color: #81c784; }
+
+/* Passage font size control */
+.passage-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.passage-font-btn { width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.passage-font-btn:hover { background:var(--red-bg); border-color:var(--red); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="test-wrapper">
+  <!-- TOP BAR -->
+  <div class="test-topbar">
+    <div class="topbar-left">
+      <div class="topbar-candidate">
+        CANDIDATE NAME<br><strong>{{ current_user.username }}</strong>
+      </div>
+      <div class="topbar-candidate">
+        CANDIDATE NUMBER<br><strong>{{ current_user.id[-6:] }}</strong>
+      </div>
+      <div class="topbar-section">
+        <select onchange="window.location.href='{{ url_for('tests.test_list') }}'">
+          <option>{% if attempt.section == 'reading' %}📖 READING{% elif attempt.section == 'listening' %}🎧 LISTENING{% elif attempt.section == 'grammar' %}📐 GRAMMAR{% elif attempt.section == 'mock' %}📝 MOCK{% else %}📝 TEST{% endif %}</option>
+          <option value="list">{{ _('test.list_title') }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div style="display:flex;gap:4px;align-items:center;margin-right:12px;">
+        <button type="button" class="passage-font-btn" onclick="changeFontSizeFromBar(-1)" title="Kichraytirish" style="width:24px;height:24px;font-size:11px;">A−</button>
+        <button type="button" class="passage-font-btn" onclick="changeFontSizeFromBar(1)" title="Kattalashtirish" style="width:24px;height:24px;font-size:11px;">A+</button>
+        <button type="button" class="passage-font-btn" onclick="document.querySelector('.passage-text')?.style&&toggleMark('underline')" title="Tagiga chizish" style="width:24px;height:24px;font-size:11px;text-decoration:underline;">U</button>
+        <button type="button" class="passage-font-btn" onclick="toggleMark('highlight')" title="Ajratib ko'rsatish" style="width:24px;height:24px;font-size:11px;">🖍️</button>
+        <button type="button" class="passage-font-btn" onclick="clearAllMarks()" title="Tozalash" style="width:24px;height:24px;font-size:11px;">🧹</button>
+      </div>
+      <button class="topbar-help" type="button" onclick="alert('Savolni o\'qing va to\'g\'ri javobni tanlang')">❓ Help</button>
+      <div class="topbar-timer" id="testTimer" data-time-left="{{ time_left }}">--:--</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="test-content">
+    <div class="test-question-card">
+      <div class="test-question-number">
+        {% if question.type == 'writing' and not question.get('gap_items') %}
+        <strong style="color:var(--text);font-size:14px;">The Writing Paper consists of TWO parts.</strong><br>
+        <strong style="color:var(--text);font-size:12px;">Total time allowed: 1 hour</strong>
+        {% else %}
+        {% if question.get('section') == 'listening' %}Part {{ question.get('part', 1) }}{% else %}Question {{ question.get('start_num', q_index + 1) }} / 35{% endif %}
+        {% endif %}
+        <span class="test-question-section {{ 'section-' + (question.section or attempt.section or '') }}">
+          {{ {'reading': '📖 Reading', 'listening': '🎧 Listening', 'grammar': '📐 Grammar', 'writing': '✍️ Writing', 'mock': '📝 Mock'}.get(question.section or attempt.section, '📝 Test') }}
+        </span>
+      </div>
+
+      {% if question.get('image_url') %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="test-passage-box" style="max-height:60vh;display:flex;align-items:flex-start;justify-content:center;background:var(--bg);position:relative;">
+          {% if question.get('section') == 'listening' and audio_parts and audio_parts|length > 0 and q_index < audio_parts|length %}
+          <div style="position:absolute;top:8px;left:8px;z-index:5;">
+            <button type="button" onclick="playAudio(this)" data-url="{{ audio_parts[q_index] }}" style="padding:8px 16px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">▶ Eshiting</button>
+            <audio style="display:none;" preload="none"></audio>
+          </div>
+          {% endif %}
+          <img src="{{ question.image_url }}" alt="Question image" style="max-width:100%;height:auto;border-radius:8px;">
+        </div>
+        <div>
+          <div class="test-question-text" style="margin-bottom:0;">{{ question.question }}</div>
+      {% elif question.get('passage') and question.passage and not question.get('gap_items') and question.type != 'matching' and question.type != 'multiple_group' %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="test-passage-box" style="max-height:60vh;">
+          <div class="passage-toolbar">
+            <strong style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;">READING PASSAGE</strong>
+            <button type="button" class="passage-font-btn" onclick="changeFontSize(this, -1)" title="Kichraytirish">A−</button>
+            <button type="button" class="passage-font-btn" onclick="changeFontSize(this, 1)" title="Kattalashtirish">A+</button>
+            <button type="button" class="passage-font-btn" onclick="toggleMark('underline')" title="Tagiga chizish" style="text-decoration:underline;font-style:italic;">U</button>
+            <button type="button" class="passage-font-btn" onclick="toggleMark('highlight')" title="Ajratib ko'rsatish" style="font-size:13px;">🖍️</button>
+            <button type="button" class="passage-font-btn" onclick="clearMarks(this)" title="Tozalash" style="font-size:13px;">🧹</button>
+          </div>
+          <div class="passage-text" style="font-size:14px;line-height:1.7;color:var(--text-secondary);">
+            {{ question.passage }}
+          </div>
+        </div>
+        <div>
+          <div class="test-question-text" style="margin-bottom:0;">{{ question.question }}</div>
+      {% elif not question.get('gap_items') and question.type != 'matching' and question.type != 'writing' and question.type != 'multiple_group' %}
+      <div class="test-question-text">{{ question.question }}</div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('tests.take_question', attempt_id=attempt._id, q_index=q_index) }}" id="questionForm" style="padding-top:8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="q_index" value="{{ q_index }}">
+
+        {% if question.type == 'writing' and question.get('gap_items') %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div class="test-passage-box" style="max-height:60vh;margin:0;">
+            {% if question.get('section') == 'listening' and audio_parts and audio_parts|length > 0 and q_index < audio_parts|length %}
+            <div style="margin-bottom:10px;">
+              <button type="button" onclick="playAudio(this)" data-url="{{ audio_parts[q_index] }}" style="width:100%;padding:8px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">▶ Part {{ question.get('part', q_index + 1) }} ni eshiting</button>
+              <audio style="display:none;" preload="none"></audio>
+            </div>
+            {% endif %}
+            <div class="passage-toolbar">
+              <strong style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;">{% if question.get('section') == 'listening' %}TRANSCRIPT{% else %}READING PASSAGE{% endif %}</strong>
+              <button type="button" class="passage-font-btn" onclick="changeFontSize(this, -1)" title="Kichraytirish">A−</button>
+              <button type="button" class="passage-font-btn" onclick="changeFontSize(this, 1)" title="Kattalashtirish">A+</button>
+            <button type="button" class="passage-font-btn" onclick="toggleMark('underline')" title="Tagiga chizish" style="text-decoration:underline;font-style:italic;">U</button>
+            <button type="button" class="passage-font-btn" onclick="toggleMark('highlight')" title="Ajratib ko'rsatish" style="font-size:13px;">🖍️</button>
+            <button type="button" class="passage-font-btn" onclick="clearMarks(this)" title="Tozalash" style="font-size:13px;">🧹</button>
+            </div>
+            <div class="passage-text" style="font-size:18px;line-height:1.8;color:var(--text-secondary);">
+              {% if question.get('title') %}<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px;">{{ question.title }}</div>{% endif %}
+              {{ question.passage }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;">{{ question.question }}</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px;">Fill in the gaps:</div>
+            {% for i in range(question.gap_items|length) %}
+            {% set label = question.gap_labels[i] if question.get('gap_labels') else 'Q' + (i+1)|string %}
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">{{ label }}</label>
+              <input type="text" name="answer_{{ i }}" class="writing-textarea" style="min-height:40px;padding:10px 14px;" value="{% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is string %}{{ prev_answer.user_answer.split(',')[i] if i < prev_answer.user_answer.split(',')|length else '' }}{% endif %}">
+            </div>
+            {% endfor %}
+          </div>
+        {% elif question.type == 'writing' %}
+        {% if question.get('gap_items') %}
+        <!-- gap-fill handled in the gap_items section above -->
+        {% else %}
+        <!-- Writing task: prompt left, textarea right -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div class="test-passage-box" style="max-height:60vh;margin:0;">
+            <div class="passage-toolbar">
+              <strong style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;">
+                TASK 1
+              </strong>
+              <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">
+                ✉️ Xat (do'stga + rahbariyatga)
+              </span>
+            </div>
+            <div style="font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap;">{{ question.question }}</div>
+          </div>
+          <div>
+            {% if question.get('writing_parts') %}
+              {% for part in question.writing_parts %}
+              {% set pi = loop.index0 %}
+              <div style="margin-bottom:16px;">
+                <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">{{ part.label }}</div>
+                <textarea name="answer_{{ pi }}" class="writing-textarea" style="min-height:180px;"
+                  placeholder="Javobingizni shu yerga yozing...">{{ prev_answer.user_answer[pi] if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is string and pi < prev_answer.user_answer|length else '' }}</textarea>
+                <div style="text-align:right;margin-top:4px;font-size:12px;color:var(--text-muted);">
+                  So'zlar: <span class="wc-part" data-part="{{ pi }}">0</span>
+                  {% set limit_parts = part.word_limit.split('-') %}
+                  {% if limit_parts|length == 2 %} / {{ limit_parts[1] }}{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+            <textarea name="answer" class="writing-textarea" style="min-height:50vh;"
+              placeholder="Javobingizni shu yerga yozing...">{{ prev_answer.user_answer if prev_answer and prev_answer.get('answered') else '' }}</textarea>
+            <div style="text-align:right;margin-top:8px;">
+              <span id="wordCount" style="color:var(--text-muted);font-size:13px;">0 so'z</span>
+              {% if question.get('word_limit') %}
+              <span style="color:var(--text-muted);font-size:13px;"> / {{ question.word_limit }} so'z</span>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% elif question.type == 'true_false' %}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label class="option-item" onclick="selectOption(this, 0)">
+            <span class="opt-letter">✅</span>
+            <span style="flex:1;">True</span>
+            <input type="radio" name="answer" value="0" style="display:none;" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer == 0 %}checked{% endif %}>
+          </label>
+          <label class="option-item" onclick="selectOption(this, 1)">
+            <span class="opt-letter">❌</span>
+            <span style="flex:1;">False</span>
+            <input type="radio" name="answer" value="1" style="display:none;" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer == 1 %}checked{% endif %}>
+          </label>
+        </div>
+
+        {% elif question.type == 'true_false_not_given' %}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label class="option-item" onclick="selectOption(this, 0)">
+            <span class="opt-letter">✅</span>
+            <span style="flex:1;">True</span>
+            <input type="radio" name="answer" value="0" style="display:none;" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer == 0 %}checked{% endif %}>
+          </label>
+          <label class="option-item" onclick="selectOption(this, 1)">
+            <span class="opt-letter">❌</span>
+            <span style="flex:1;">False</span>
+            <input type="radio" name="answer" value="1" style="display:none;" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer == 1 %}checked{% endif %}>
+          </label>
+          <label class="option-item" onclick="selectOption(this, 2)">
+            <span class="opt-letter">❓</span>
+            <span style="flex:1;">Not Given</span>
+            <input type="radio" name="answer" value="2" style="display:none;" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer == 2 %}checked{% endif %}>
+          </label>
+        </div>
+
+        {% elif question.type == 'matching' %}
+        {% set has_ads = question.get('items', [''])|first|string|trim and '|' in (question.get('items', [''])|first|string) %}
+        {% if has_ads %}
+        <!-- Part 2 style: ads left, options right -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;white-space:pre-wrap;">{{ question.question }}</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;">Reklamalar:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            {% for item in question.get('items', []) %}
+            {% set item_idx = loop.index0 %}
+            {% set parts = item.split('|') %}
+            {% set title = parts[0] %}
+            {% set features = parts[1:-1] if parts|length > 2 else [] %}
+            {% set contact = parts[-1] if parts|length > 2 else '' %}
+            {% set colors = ['#e3f2fd','#e8f5e9','#fff3e0','#e0f7fa','#fff8e1','#fce4ec','#f3e5f5','#e0f2f1'] %}
+            {% set bg = colors[item_idx] if item_idx < 8 else '#f5f5f5' %}
+            <div style="background:{{ bg }};border-radius:10px;margin-bottom:8px;border:1px solid rgba(0,0,0,0.08);overflow:hidden;">
+              <div style="padding:8px 10px 6px;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                  <span style="background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:3px;">{{ item_idx + 7 }}</span>
+                  <span style="font-size:11px;font-weight:700;color:#222;">{{ title }}</span>
+                </div>
+                <ul style="margin:2px 0 4px;padding-left:12px;font-size:10px;color:#444;line-height:1.5;">
+                {% for f in features %}<li>{{ f }}</li>{% endfor %}
+                </ul>
+                {% if contact %}<div style="font-size:9px;color:#888;border-top:1px solid rgba(0,0,0,0.05);padding-top:3px;margin-top:2px;">{{ contact }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            </div>
+          </div>
+          <div class="test-passage-box" style="max-height:60vh;margin:0;">
+            <strong style="font-size:12px;color:#888;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">JAVOBLAR</strong>
+            <div style="font-size:14px;line-height:2;color:var(--text-secondary);">
+              {% for opt in question.options %}
+              {% set opt_idx = loop.index0 %}
+              <div style="padding:7px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);">
+                <span style="flex:1;font-size:14px;font-weight:500;">{{ opt }}</span>
+                <select name="answer_{{ opt_idx }}" style="width:auto;min-width:50px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--bg-secondary);color:var(--red);">
+                  <option value="" style="color:var(--text-muted);">—</option>
+                  {% for num in range(7, 15) %}
+                  <option value="{{ num }}" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is mapping and prev_answer.user_answer.get(opt_idx|string) and prev_answer.user_answer.get(opt_idx|string)|string == num|string %}selected{% endif %}>{{ num }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <!-- Part 3 style: passage left, A-H options right -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div>
+            {% if question.get('section') == 'listening' and audio_parts and audio_parts|length > 0 and q_index < audio_parts|length %}
+            <div style="margin-bottom:10px;">
+              <button type="button" onclick="playAudio(this)" data-url="{{ audio_parts[q_index] }}" style="width:100%;padding:8px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">▶ Part {{ question.get('part', q_index + 1) }} ni eshiting</button>
+              <audio style="display:none;" preload="none"></audio>
+            </div>
+            {% endif %}
+            <div class="test-passage-box" style="max-height:60vh;margin-bottom:0;">
+              <div style="font-size:16px;line-height:1.7;color:var(--text-secondary);white-space:pre-wrap;margin-bottom:12px;">{{ question.question }}</div>
+              {% if question.get('map_url') %}
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <button type="button" class="passage-font-btn" onclick="var i=this.parentElement.nextElementSibling;var h=parseInt(i.style.maxHeight)||300;i.style.maxHeight=Math.max(100,Math.min(600,h-50))+'px'" style="width:28px;height:28px;font-size:14px;font-weight:900;">−</button>
+                <button type="button" class="passage-font-btn" onclick="var i=this.parentElement.nextElementSibling;var h=parseInt(i.style.maxHeight)||300;i.style.maxHeight=Math.max(100,Math.min(600,h+50))+'px'" style="width:28px;height:28px;font-size:14px;font-weight:900;">+</button>
+                <span style="font-size:11px;color:var(--text-muted);">Rasm o'lchami</span>
+              </div>
+              <img src="{{ question.map_url }}" alt="Map" style="max-width:100%;height:auto;max-height:300px;border-radius:8px;margin-bottom:12px;">
+              {% endif %}
+              {% if question.get('passage') and question.passage %}
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:14px;line-height:1.6;color:var(--text-secondary);white-space:pre-wrap;">{{ question.passage }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="test-passage-box" style="max-height:60vh;margin:0;">
+            <strong style="font-size:12px;color:#888;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">JAVOBLAR</strong>
+            <div style="font-size:14px;line-height:2;color:var(--text-secondary);">
+              {% for opt in question.options %}
+              {% set opt_idx = loop.index0 %}
+              <div style="padding:7px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);">
+                <span style="flex:1;font-size:14px;font-weight:500;">{{ opt }}</span>
+                <select name="answer_{{ opt_idx }}" style="width:auto;min-width:100px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--bg-secondary);color:var(--red);">
+                  <option value="" style="color:var(--text-muted);">—</option>
+                  {% for item in question.get('items', []) %}
+                  {% set item_idx = loop.index0 %}
+                  <option value="{{ item_idx }}" style="color:var(--text);" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is mapping and prev_answer.user_answer.get(opt_idx|string)|string == item_idx|string %}selected{% endif %}>{{ item }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        
+        {% elif question.type == 'multiple_group' %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div>
+            {% if question.get('section') == 'listening' and audio_parts and audio_parts|length > 0 and q_index < audio_parts|length %}
+            <div style="margin-bottom:12px;">
+              <button type="button" onclick="playAudio(this)" data-url="{{ audio_parts[q_index] }}" style="width:100%;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">▶ Part {{ question.get('part', q_index + 1) }} ni eshiting</button>
+              <audio style="display:none;" preload="none"></audio>
+            </div>
+            {% endif %}
+            {% if question.get('passage') and question.passage %}
+            <div class="test-passage-box" style="max-height:60vh;">
+              <div class="passage-toolbar">
+                <strong style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;">READING PASSAGE</strong>
+                <button type="button" class="passage-font-btn" onclick="changeFontSize(this, -1)" title="Kichraytirish">A−</button>
+                <button type="button" class="passage-font-btn" onclick="changeFontSize(this, 1)" title="Kattalashtirish">A+</button>
+              </div>
+              <div class="passage-text" style="font-size:18px;line-height:1.8;color:var(--text-secondary);">
+              {% if question.get('title') %}<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px;">{{ question.title }}</div>{% endif %}
+              {{ question.passage }}
+            </div>
+            </div>
+            {% else %}
+            {% if question.get('question') and question.question.strip() %}
+            <div class="test-passage-box" style="max-height:60vh;">
+              <div style="font-size:18px;line-height:1.8;color:var(--text-secondary);white-space:pre-wrap;">{{ question.question }}</div>
+            </div>
+            {% endif %}
+            {% endif %}
+          </div>
+          <div style="max-height:60vh;overflow-y:auto;padding-right:8px;">
+            {% for item in question.get('items', []) %}
+            {% set item_idx = loop.index0 %}
+            <div style="margin-bottom:20px;padding:14px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);">
+              {% if item.get('option_images') %}
+              <!-- Picture-based question: text on top, 3 clickable image cards below -->
+              <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;">{{ item.q }}</div>
+              <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;">
+                {% for opt_img in item.option_images %}
+                {% set opt_idx = loop.index0 %}
+                <label class="option-item" onclick="selectOption(this, {{ opt_idx }})" style="flex-direction:column;align-items:center;text-align:center;padding:10px;margin:0;border-color:var(--border);cursor:pointer;">
+                  <img src="{{ opt_img }}" alt="Option {{ ['A','B','C','D'][opt_idx] }}" style="max-width:100%;height:auto;border-radius:6px;margin-bottom:6px;">
+                  <span class="opt-letter" style="width:26px;height:26px;font-size:12px;">{{ ['A','B','C','D'][opt_idx] }}</span>
+                  <input type="radio" name="q{{ item_idx }}" value="{{ opt_idx }}" style="display:none;"
+                    {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is mapping and prev_answer.user_answer.get(item_idx|string)|string == opt_idx|string %}checked{% endif %}>
+                </label>
+                {% endfor %}
+              </div>
+              {% elif item.get('image') %}
+              <div style="display:grid;grid-template-columns:3fr 2fr;gap:20px;align-items:start;">
+                <div style="text-align:center;">
+                  <img src="{{ item.image }}" alt="Question image" style="max-width:100%;height:auto;border-radius:8px;">
+                </div>
+                <div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    {% for opt in item.options %}
+                    {% set opt_idx = loop.index0 %}
+                    <label class="option-item" onclick="selectOption(this, {{ opt_idx }})" style="padding:10px 14px;margin:0;border-color:var(--border);">
+                      <span class="opt-letter" style="width:28px;height:28px;font-size:12px;">{{ ['A','B','C','D'][opt_idx] }}</span>
+                      <span style="flex:1;font-size:14px;">{{ opt }}</span>
+                      <input type="radio" name="q{{ item_idx }}" value="{{ opt_idx }}" style="display:none;"
+                        {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is mapping and prev_answer.user_answer.get(item_idx|string)|string == opt_idx|string %}checked{% endif %}>
+                    </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;">{{ item.q }}</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                {% for opt in item.options %}
+                {% set opt_idx = loop.index0 %}
+                <label class="option-item" onclick="selectOption(this, {{ opt_idx }})" style="padding:10px 14px;margin:0;border-color:var(--border);">
+                  <span class="opt-letter" style="width:28px;height:28px;font-size:12px;">{{ ['A','B','C','D'][opt_idx] }}</span>
+                  <span style="flex:1;font-size:14px;">{{ opt }}</span>
+                  <input type="radio" name="q{{ item_idx }}" value="{{ opt_idx }}" style="display:none;"
+                    {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer is mapping and prev_answer.user_answer.get(item_idx|string)|string == opt_idx|string %}checked{% endif %}>
+                </label>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Multiple Choice -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for opt in question.options %}
+          {% set opt_idx = loop.index0 %}
+          <label class="option-item" onclick="selectOption(this, {{ opt_idx }})">
+            <span class="opt-letter">{{ ['A','B','C','D','E','F','G','H'][loop.index0] }}</span>
+            <span style="flex:1;">{{ opt }}</span>
+            <input type="radio" name="answer" value="{{ opt_idx }}" style="display:none;" {% if prev_answer and prev_answer.get('answered') and prev_answer.user_answer == opt_idx %}checked{% endif %}>
+          </label>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </form>
+      {% if question.get('image_url') or (question.get('passage') and question.passage and not question.get('gap_items') and question.type != 'matching' and question.type != 'multiple_group') %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="test-bottombar">
+    <label class="review-checkbox">
+      <input type="checkbox" id="reviewCheckbox" onchange="toggleReview(this)">
+      Review
+    </label>
+
+    <div class="question-grid">
+      {% for i in range(total) %}
+      {% set answered = false %}
+      {% set marked = false %}
+      {% for a in attempt.get('answers', []) %}
+        {% if a.question_id == test.questions[i].id and a.get('answered') %}
+          {% set answered = true %}
+        {% endif %}
+        {% if a.question_id == test.questions[i].id and a.get('reviewed') %}
+          {% set marked = true %}
+        {% endif %}
+      {% endfor %}
+      <a href="{{ url_for('tests.take_question', attempt_id=attempt._id|string, q_index=i) }}"
+         class="q-grid-btn {% if i == q_index %}current{% elif answered %}answered{% elif marked %}marked{% endif %}">{{ test.questions[i].get('start_num', i+1) }}{% set items_count = test.questions[i].get('items', test.questions[i].get('gap_items', []))|length %}{% if items_count > 0 and test.questions[i].type in ('writing','matching','multiple_group') %}-{{ test.questions[i].get('start_num', i) + items_count - 1 }}{% endif %}</a>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      {% if q_index > 0 %}
+      <button type="button" class="nav-btn" onclick="navigateTo({{ q_index - 1 }})">← Previous</button>
+      {% else %}
+      <button class="nav-btn" disabled>← Previous</button>
+      {% endif %}
+
+      {% if q_index + 1 >= total %}
+      <button type="submit" form="questionForm" class="nav-btn nav-btn-primary">✅ Finish Section</button>
+      {% else %}
+      <button type="button" class="nav-btn nav-btn-primary" onclick="navigateTo({{ q_index + 1 }})">Next →</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+    // Fix mobile height
+    function fixHeight() {
+        var h = window.innerHeight;
+        document.querySelector('.test-wrapper').style.height = h + 'px';
+    }
+    fixHeight();
+    window.addEventListener('resize', fixHeight);
+
+    // Timer
+    const timerEl = document.getElementById('testTimer');
+    let timeLeft = parseInt(timerEl.dataset.timeLeft) || 0;
+
+    function updateTimer() {
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        timerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        if (timeLeft <= 120) timerEl.classList.add('warning');
+        if (timeLeft <= 60) timerEl.classList.add('danger');
+        if (timeLeft <= 0) {
+            document.getElementById('questionForm').submit();
+        }
+        timeLeft--;
+    }
+    updateTimer();
+    setInterval(updateTimer, 1000);
+
+    // Option selection
+    function selectOption(el, optIdx) {
+        const parent = el.closest('div[style*="flex-direction: column"]') || el.parentElement;
+        parent.querySelectorAll('.option-item').forEach(o => {
+            o.classList.remove('selected');
+            o.querySelector('.opt-letter').style.background = '#f0f0f0';
+            o.querySelector('.opt-letter').style.color = '#333';
+            o.style.borderColor = '#e0e0e0';
+            o.querySelector('input[type="radio"]').checked = false;
+        });
+        el.classList.add('selected');
+        el.querySelector('.opt-letter').style.background = '#1a73e8';
+        el.querySelector('.opt-letter').style.color = '#fff';
+        el.style.borderColor = '#1a73e8';
+        el.querySelector('input[type="radio"]').checked = true;
+    }
+    window.selectOption = selectOption;
+
+    // Auto-select on load
+    document.querySelectorAll('.option-item').forEach(el => {
+        const radio = el.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+            el.classList.add('selected');
+            el.querySelector('.opt-letter').style.background = '#1a73e8';
+            el.querySelector('.opt-letter').style.color = '#fff';
+            el.style.borderColor = '#1a73e8';
+        }
+    });
+
+    // Word count for writing
+    const textarea = document.querySelector('textarea[name="answer"]');
+    const wordCount = document.getElementById('wordCount');
+    if (textarea && wordCount) {
+        function countWords() {
+            const text = textarea.value.trim();
+            const count = text ? text.split(/\s+/).length : 0;
+            wordCount.textContent = count + ' words';
+        }
+        textarea.addEventListener('input', countWords);
+        countWords();
+    }
+
+    // Font size control
+    function changeFontSize(btn, delta) {
+        var passage = btn.closest('.test-passage-box')?.querySelector('.passage-text');
+        if (!passage) return;
+        var cur = parseInt(passage.style.fontSize) || 14;
+        passage.style.fontSize = Math.max(10, Math.min(28, cur + delta)) + 'px';
+    }
+    window.changeFontSize = changeFontSize;
+
+    // Font size from toolbar
+    function changeFontSizeFromBar(delta) {
+        document.querySelectorAll('.passage-text').forEach(function(p) {
+            var cur = parseInt(p.style.fontSize) || 14;
+            p.style.fontSize = Math.max(10, Math.min(28, cur + delta)) + 'px';
+        });
+    }
+    window.changeFontSizeFromBar = changeFontSizeFromBar;
+
+    // Clear all marks
+    function clearAllMarks() {
+        document.querySelectorAll('.passage-text').forEach(function(p) {
+            p.querySelectorAll('span[style*=\"background\"], span[style*=\"underline\"]').forEach(function(el) {
+                el.replaceWith.apply(el, Array.from(el.childNodes));
+            });
+        });
+    }
+    window.clearAllMarks = clearAllMarks;
+
+    // Mark text (highlight/underline)
+    function toggleMark(mode) {
+        var sel = window.getSelection();
+        if (!sel.rangeCount || sel.isCollapsed) return;
+        var range = sel.getRangeAt(0);
+        var node = range.commonAncestorContainer;
+        while (node && !node.classList?.contains?.('passage-text')) node = node.parentElement;
+        if (!node) return;
+        var span = document.createElement('span');
+        if (mode === 'highlight') {
+            span.style.background = 'rgba(255,255,0,0.35)';
+        } else {
+            span.style.textDecoration = 'underline';
+            span.style.textDecorationColor = 'var(--red)';
+            span.style.textDecorationThickness = '2px';
+        }
+        try { range.surroundContents(span); } catch(e) {
+            var text = range.extractContents();
+            span.appendChild(text);
+            range.insertNode(span);
+        }
+        sel.removeAllRanges();
+    }
+    window.toggleMark = toggleMark;
+
+    // Review toggle
+    function toggleReview(cb) {
+        var btn = document.querySelector('.q-grid-btn.current');
+        if (btn) {
+            if (cb.checked) btn.classList.add('marked');
+            else btn.classList.remove('marked');
+        }
+    }
+    window.toggleReview = toggleReview;
+
+    // Restore review state on load
+    (function() {
+        var rb = document.getElementById('reviewCheckbox');
+        if (rb && {{ 'true' if prev_answer and prev_answer.get('reviewed') else 'false' }}) {
+            rb.checked = true;
+            var btn = document.querySelector('.q-grid-btn.current');
+            if (btn) btn.classList.add('marked');
+        }
+    })();
+
+    // Navigate to question (saves current answer first)
+    function navigateTo(index) {
+        var form = document.getElementById('questionForm');
+        if (!form) return;
+        var inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'go_target'; inp.value = index;
+        form.appendChild(inp);
+        var sub = document.createElement('button');
+        sub.type = 'submit'; sub.style.display = 'none';
+        form.appendChild(sub);
+        if (form.requestSubmit) form.requestSubmit(sub);
+        else sub.click();
+    }
+    window.navigateTo = navigateTo;
+
+    // Play audio
+    function playAudio(btn) {
+        var audio = btn.parentElement.querySelector('audio');
+        if (!audio) return;
+        if (audio.paused) {
+            audio.src = btn.getAttribute('data-url');
+            audio.play();
+            btn.innerHTML = btn.innerHTML.replace('▶', '⏸');
+        } else {
+            audio.pause();
+            btn.innerHTML = btn.innerHTML.replace('⏸', '▶');
+        }
+        audio.onended = function() {
+            btn.innerHTML = btn.innerHTML.replace('⏸', '▶');
+        };
+    }
+    window.playAudio = playAudio;
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); document.getElementById('questionForm').submit(); }
+        if (e.key === 'ArrowLeft' && {{ q_index }} > 0) {
+            e.preventDefault();
+            navigateTo({{ q_index - 1 }});
+        }
+    });
+})();
+</script>
+{% endblock %}

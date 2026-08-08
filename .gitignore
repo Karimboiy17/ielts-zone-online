@@ -1,0 +1,14 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+data/
+.railway/
+node_modules/
+*.db
+b1_pdf_text.txt
+extract_*.py
+crop_*.py
+resize_*.py
+run_local.py

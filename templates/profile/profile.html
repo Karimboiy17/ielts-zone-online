@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ _('profile.title') }}{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h1>{{ _('profile.title') }}</h1>
+
+    {% if attempts %}
+    <div class="stats-grid profile-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_tests }}</div>
+            <div class="stat-label">{{ _('profile.total_tests') }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ completed }}</div>
+            <div class="stat-label">{{ _('profile.completed') }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ best_reading or '—' }}</div>
+            <div class="stat-label">{{ _('profile.reading_best') }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ best_listening or '—' }}</div>
+            <div class="stat-label">{{ _('profile.listening_best') }}</div>
+        </div>
+    </div>
+
+    {% set cefr_labels = {'NOVICE': _('cefr.novice.name'), 'A1': _('cefr.a1.name'), 'A2': _('cefr.a2.name'), 'B1': _('cefr.b1.name'), 'B1+': _('cefr.b1plus.name')} %}
+    {% set cefr_colors = {'NOVICE': '#C4B5FD', 'A1': '#A78BFA', 'A2': '#8B5CF6', 'B1': '#7C3AED', 'B1+': '#6D28D9'} %}
+
+    <h3 style="margin-top:24px;">📋 {{ _('profile.test_history') }}</h3>
+    {% for a in attempts %}
+    <div class="test-card" style="margin-bottom:16px;">
+        <div class="test-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                {% if a.section == 'mock' %}
+                <span style="font-size:20px;">🧪</span>
+                {% elif a.section == 'reading' %}
+                <span style="font-size:20px;">📖</span>
+                {% elif a.section == 'listening' %}
+                <span style="font-size:20px;">🎧</span>
+                {% elif a.section == 'writing' %}
+                <span style="font-size:20px;">✍️</span>
+                {% else %}
+                <span style="font-size:20px;">🧪</span>
+                {% endif %}
+                <strong style="margin-left:8px;">{% if a.test_title %}{{ a.test_title }}{% elif a.section == 'mock' %}IELTS ZONE Test{% elif a.section == 'reading' %}Reading{% elif a.section == 'listening' %}Listening{% elif a.section == 'writing' %}Writing{% else %}Test{% endif %}</strong>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                {% if a.payment_status == 'paid' %}
+                <span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600;">✅</span>
+                {% elif a.payment_status == 'checking' %}
+                <span style="background:var(--orange-bg);color:var(--orange);padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600;">⏳</span>
+                {% else %}
+                <span style="background:var(--gray-100);color:var(--gray-600);padding:2px 8px;border-radius:8px;font-size:12px;font-weight:600;">—</span>
+                {% endif %}
+                {% if a.cefr_level and a.cefr_level != 'Not available' %}
+                <div style="background:{{ cefr_colors.get(a.cefr_level, '#3B82F6') }};color:#fff;padding:2px 12px;border-radius:12px;font-size:13px;font-weight:700;">
+                    {{ a.cefr_level }}
+                </div>
+                {% endif %}
+                <span style="color:var(--text-muted);font-size:12px;">{{ a.started_at.strftime('%d.%m.%Y') }}</span>
+            </div>
+        </div>
+        {% if a.status == 'writing_review' %}
+        <div style="margin-top:8px;padding:8px 12px;background:var(--blue-bg);border-radius:8px;font-size:13px;">
+            ✍️ Writing — admin tekshiruvi kutilmoqda
+        </div>
+        {% elif a.status == 'completed' and a.earned_points is not none %}
+        <div style="margin-top:8px;">
+            <span style="font-weight:700;">{{ a.earned_points }} / {{ a.total_points }}</span>
+            <span style="color:var(--text-muted);font-size:12px;margin-left:8px;">
+                — {{ (a.earned_points / a.total_points * 100)|round(1) if a.total_points else 0 }}%
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-test-card">
+        <p style="margin-bottom:8px;">{{ _('profile.empty_title') }}</p>
+        <p style="color:var(--text-muted);font-size:14px;">{{ _('profile.empty_desc') }}</p>
+        <a href="{{ url_for('tests.test_list') }}" class="btn-primary" style="margin-top:12px;display:inline-block;">{{ _('profile.view_tests') }}</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

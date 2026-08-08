@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ _('cefr_page.title') }}{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:64px;padding-bottom:40px;">
+  <div class="container">
+    <div class="section-header">
+      <h2>📚 {{ _('cefr.title') }}</h2>
+      <p>{{ _('cefr_page.desc') }}</p>
+    </div>
+    <div class="levels-grid">
+      {% for level in levels %}
+      <a href="/cefr-level?code={{ level.code }}" class="level-card" style="text-decoration:none;color:inherit;cursor:pointer;display:block;">
+        <div class="level-emoji">{{ level.icon }}</div>
+        <div class="level-code">{{ level.code }}</div>
+        <div class="level-name">{{ level.name_uz }}</div>
+        <div class="level-desc">{{ level.desc_uz }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

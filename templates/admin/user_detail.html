@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="admin-container">
+    {% include "admin/_nav.html" %}
+
+    <a href="{{ url_for('admin.user_list') }}" class="btn btn-outline" style="margin-bottom:20px;">{{ _('admin_user.back') }}</a>
+
+    <div class="admin-header">
+      <h1>👤 {{ user.username }} {% if user.role == 'admin' %}<span class="admin-badge">{{ _('nav.admin') }}</span>{% endif %}</h1>
+    </div>
+
+    <div class="admin-stats" style="margin-bottom:24px;">
+      <div class="admin-stat">
+        <span style="color:var(--blue);">{{ stats.total_attempts }}</span>
+        <span>{{ _('admin_user.total_attempts') }}</span>
+      </div>
+      <div class="admin-stat">
+        <span style="color:var(--green);">{{ stats.paid }}</span>
+        <span>{{ _('admin_user.paid') }}</span>
+      </div>
+      <div class="admin-stat">
+        <span style="color:var(--purple);">{{ stats.completed }}</span>
+        <span>{{ _('admin_user.completed') }}</span>
+      </div>
+      <div class="admin-stat">
+        <span style="color:var(--orange);">{{ stats.total_spent|int|string }} {{ _('suffix.sum') }}</span>
+        <span>{{ _('admin_user.total_paid') }}</span>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:12px;">📋 {{ _('admin_user.attempts_title') }}</h3>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>{{ _('admin_user.column_test') }}</th>
+            <th>{{ _('admin_user.column_status') }}</th>
+            <th>{{ _('admin_user.column_result') }}</th>
+            <th>{{ _('admin_user.column_cefr') }}</th>
+            <th>{{ _('admin_user.column_payment') }}</th>
+            <th>{{ _('admin_user.column_date') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attempts %}
+          <tr>
+            <td>
+              <span style="font-weight:700;">🧪 {{ a.test_name }}</span>
+              {% if a.section == 'writing' %}
+              <span style="background:var(--blue-bg);color:var(--blue);padding:1px 6px;border-radius:8px;font-size:11px;">✍️ Writing</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if a.status == 'completed' %}
+              <span style="color:var(--green);font-weight:700;">✅ {{ _('admin_user.status_completed') }}</span>
+              {% elif a.status == 'writing_review' %}
+              <span style="color:var(--orange);font-weight:700;">✍️ {{ _('admin_user.status_review') }}</span>
+              {% elif a.status == 'started' %}
+              <span style="color:var(--blue);font-weight:700;">⏳ {{ _('admin_user.status_in_progress') }}</span>
+              {% else %}
+              <span style="color:var(--gray-600);">{{ a.status }}</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:700;">
+              {% if a.score is not none %}
+              {{ a.score }}%
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td style="font-weight:700;">
+              {% if a.cefr_level %}
+              {{ a.cefr_level }}
+              {% else %}
+              —
+              {% endif %}
+            </td>
+            <td>
+              {% if a.payment_status == 'paid' %}
+              <span style="color:var(--green);font-weight:700;">✅ {{ _('admin_user.payment_paid') }}</span>
+              {% elif a.payment_status == 'checking' %}
+              <span style="color:var(--orange);font-weight:700;">⏳ {{ _('admin_user.payment_checking') }}</span>
+              {% else %}
+              <span style="color:var(--gray-600);font-weight:700;">❌ {{ _('admin_user.status_in_progress') }}</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--text-muted);font-size:12px;">{{ a.started_at.strftime('%d.%m.%Y %H:%M') if a.started_at else '—' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">{{ _('admin_user.no_attempts') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

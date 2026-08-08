@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Test — {{ test.title }}{% endblock %}
+{% block content %}
+<section class="test-taking">
+    <div class="test-header">
+        <div class="test-header-info">
+            <span class="test-header-badge {{ test.section }}">{{ test.icon }} {{ test.title }}</span>
+            <span class="test-timer" id="timer">{{ '{:02d}:{:02d}'.format(test.time_limit, 0) }}</span>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('tests.submit_test', attempt_id=attempt._id) }}" class="test-form" id="testForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if test.section == 'listening' and test.audio_url %}
+        <div class="audio-player-card">
+            <div class="audio-player-label">🎧 Listening audio</div>
+            <audio controls autoplay style="width:100%;border-radius:8px">
+                <source src="{{ test.audio_url }}" type="audio/mpeg">
+            </audio>
+        </div>
+        {% endif %}
+        {% for q in test.questions %}
+        <div class="question-card" data-question="{{ q.id }}">
+            <div class="question-number">Savol {{ loop.index }}</div>
+            <div class="question-text">{{ q.question }}</div>
+            {% if q.passage %}
+            <div class="question-passage">
+                <div class="passage-label">📄 Matn:</div>
+                {{ q.passage }}
+            </div>
+            {% endif %}
+            <div class="question-options">
+                {% for option in q.options %}
+                <label class="option-item">
+                    <input type="radio" name="answer_{{ q.id }}" value="{{ loop.index0 }}" required>
+                    <span class="option-text">{{ option }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="test-submit-bar">
+            <button type="submit" class="btn-primary" style="padding: 14px 40px; font-size: 16px;">
+                ✅ {{ _('test.submit') }}
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+    // Timer
+    let minutes = {{ test.time_limit }};
+    let seconds = 0;
+    const timerEl = document.getElementById('timer');
+
+    function updateTimer() {
+        if (seconds === 0) {
+            if (minutes === 0) {
+                document.getElementById('testForm').submit();
+                return;
+            }
+            minutes--;
+            seconds = 59;
+        } else {
+            seconds--;
+        }
+        timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        // Warning colors
+        if (minutes < 5) {
+            timerEl.style.color = '#FF6B35';
+        }
+        if (minutes < 2) {
+            timerEl.style.color = '#EF4444';
+            timerEl.style.animation = 'pulse 1s infinite';
+        }
+    }
+
+    setInterval(updateTimer, 1000);
+
+    // Confirm submit
+    document.getElementById('testForm').addEventListener('submit', function(e) {
+        const confirmed = confirm('Testni yakunlamoqchimisiz? Barcha javoblar saqlanadi.');
+        if (!confirmed) e.preventDefault();
+    });
+</script>
+<style>
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .audio-player-card {
+        background:var(--bg-card);
+        border:1px solid var(--border);
+        border-radius:12px;
+        padding:16px;
+        margin-bottom:20px;
+    }
+    .audio-player-label {
+        font-size:13px;
+        font-weight:600;
+        color:var(--primary);
+        margin-bottom:8px;
+    }
+</style>
+{% endblock %}

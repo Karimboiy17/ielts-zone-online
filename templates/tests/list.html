@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ _('test.list_title') }}{% endblock %}
+{% block content %}
+<section class="section">
+    <div class="section-title">
+        <div class="tag">🎓 {{ _('test.list_title') }}</div>
+        <h2>{{ _('test.list_desc') }}</h2>
+        <p>Har bir daraja uchun MID va END imtihonlari mavjud</p>
+    </div>
+
+    {% set level_order = ['novice', 'a1', 'a2', 'b1', 'b1plus'] %}
+    {% set level_labels = {'novice': 'NOVICE', 'a1': 'A1', 'a2': 'A2', 'b1': 'B1', 'b1plus': 'B1+'} %}
+    {% set level_icons = {'novice': '🌱', 'a1': '🔰', 'a2': '📘', 'b1': '📗', 'b1plus': '📕'} %}
+    {% set level_colors = {'novice': '#C4B5FD', 'a1': '#A78BFA', 'a2': '#8B5CF6', 'b1': '#7C3AED', 'b1plus': '#6D28D9'} %}
+
+    {% for lvl in level_order %}
+    {% set lvl_tests = tests|selectattr('section', 'equalto', lvl ~ '_mid')|list + tests|selectattr('section', 'equalto', lvl ~ '_end')|list %}
+    {% if lvl_tests %}
+    <div class="level-group" style="margin-bottom:32px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:{{ level_colors[lvl] }};display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;">
+                {{ level_icons[lvl] }}
+            </div>
+            <div>
+                <h3 style="font-size:20px;font-weight:800;margin:0;">{{ level_labels[lvl] }} <span style="font-size:13px;color:var(--text-muted);font-weight:600;">daraja</span></h3>
+                <p style="font-size:13px;color:var(--text-muted);margin:2px 0 0;">{{ _('test.list_desc') }}</p>
+            </div>
+        </div>
+        <div class="test-cards" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));">
+            {% for test in lvl_tests %}
+            <a href="{{ url_for('tests.test_detail', section=test.section) }}" class="test-card" style="text-decoration: none; color: inherit;">
+                <div class="badge {{ test.section }}">{{ test.icon }} {{ test.title }}</div>
+                <h3>{{ test.title }}</h3>
+                <p style="color: var(--gray-700); font-size: 14px;">
+                    {% if test.section.endswith('_mid') %}
+                        📘 {{ level_labels[lvl] }} daraja oraliq (MID) imtihoni
+                    {% elif test.section.endswith('_end') %}
+                        📗 {{ level_labels[lvl] }} daraja yakuniy (END) imtihoni
+                    {% else %}
+                        Tez orada
+                    {% endif %}
+                </p>
+                <div class="details">
+                    <span>⏱️ {{ test.time_limit }} {{ _('test.duration') }}</span>
+                    <span>📝 {{ test.questions|length }} {{ _('test.questions') }}</span>
+                </div>
+                <div class="action-row">
+                    <div class="price">
+                        <span class="orig-price">{{ test.original_price|default(25000)|int|string }}</span>
+                        <span class="cur-price">{{ test.discount_price|default(test.price|default(15000))|int|string }}</span> <small>so'm</small>
+                    </div>
+                    <span class="btn-start">{{ _('test.start') }} →</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {% if not tests %}
+    <div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+        <div style="font-size:48px;margin-bottom:12px;">📝</div>
+        <h3 style="color:var(--text);margin-bottom:8px;">Hozircha imtihonlar yo'q</h3>
+        <p>Imtihonlar tayyorlanmoqda. Tez orada qo'shiladi!</p>
+    </div>
+    {% endif %}
+
+    <!-- Speaking coming soon -->
+    <div class="test-card coming-soon" style="max-width:320px;margin:0 auto;">
+        <div class="badge speaking">🎙️ Speaking</div>
+        <h3>Speaking</h3>
+        <p style="color: var(--gray-700); font-size: 14px;">Og'zaki qism — tez orada!</p>
+        <div class="details">
+            <span>⏱️ 15 daqiqa</span>
+            <span>🎤 3 qism</span>
+        </div>
+        <div class="action-row">
+            <div class="price" style="font-size: 16px; color: var(--gray-500);">Tez orada</div>
+            <span class="btn-start" style="background: var(--gray-300); cursor: not-allowed;">⏳ Tayyorlanmoqda</span>
+        </div>
+    </div>
+</section>
+{% endblock %}

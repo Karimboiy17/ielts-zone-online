@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ _('footer.about') }}{% endblock %}
+{% block content %}
+<section class="section" style="max-width:700px;margin:0 auto;padding:60px 20px;">
+  <div class="section-header">
+    <h2>{{ _('footer.about') }}</h2>
+    <p>{{ _('about.desc') }}</p>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div style="font-size:40px;margin-bottom:16px;">🇬🇧</div>
+    <p style="color:var(--text-secondary);line-height:1.7;margin-bottom:20px;">
+      {{ _('about.goal') }}
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="test-card-icon blue" style="display:flex;align-items:center;gap:8px;padding:14px;border-radius:12px;background:var(--red-bg);flex-wrap:nowrap;width:100%;">
+        <span>⚡</span><span style="font-size:14px;font-weight:700;">{{ _('about.fast_result') }}</span>
+      </div>
+      <div class="test-card-icon orange" style="display:flex;align-items:center;gap:8px;padding:14px;border-radius:12px;background:var(--orange-bg);flex-wrap:nowrap;width:100%;">
+        <span>✍️</span><span style="font-size:14px;font-weight:700;">{{ _('about.expert_check') }}</span>
+      </div>
+      <div class="test-card-icon green" style="display:flex;align-items:center;gap:8px;padding:14px;border-radius:12px;background:var(--purple-bg);flex-wrap:nowrap;width:100%;">
+        <span>💰</span><span style="font-size:14px;font-weight:700;">{{ price|int|string }} {{ _('about.price') }}</span>
+      </div>
+      <div class="test-card-icon purple" style="display:flex;align-items:center;gap:8px;padding:14px;border-radius:12px;background:var(--blue-bg);flex-wrap:nowrap;width:100%;">
+        <span>🎯</span><span style="font-size:14px;font-weight:700;">{{ _('about.real_format') }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

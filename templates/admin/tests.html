@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ _('admin_tests.title') }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="admin-container">
+    {% include "admin/_nav.html" %}
+    <div class="admin-header">
+      <div>
+        <h1>🧪 {{ _('admin_tests.title') }}</h1>
+        <p>{{ _('admin_tests.desc') }}</p>
+      </div>
+      <a href="{{ url_for('admin.test_new') }}" class="btn-primary">+ Yangi test</a>
+      </div>
+    </div>
+    <div class="admin-grid" style="margin-top:24px;">
+      {% for t in tests %}
+      <div class="test-card">
+        <div class="test-card-header">
+          <div>
+            <span class="test-emoji">{{ t.icon or '🧪' }}</span>
+            <strong>{{ t.title }}</strong>
+          </div>
+          <div class="test-actions">
+            <span class="test-status {{ 'active' if t.active else 'inactive' }}">
+              {{ '🟢' if t.active else '🔴' }} {% if not t.active %}{{ _('admin_tests.inactive') }}{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="test-card-body">
+          <div class="test-meta">
+            <span>📝 {{ t.questions|length }} parts</span>
+            <span>⏱️ {{ t.time_limit }} {{ _('suffix.min') }}</span>
+            <span>💰 <s style="color:var(--gray-400);">{{ t.original_price|default(25000)|int|string }} so'm</s>
+              <strong style="color:var(--green);">{{ t.price|int|string }} so'm</strong></span>
+          </div>
+        </div>
+        <div class="test-card-footer">
+          <a href="{{ url_for('admin.test_edit', test_id=t._id, _csrf_token=None) }}" style="color:var(--blue);text-decoration:none;font-weight:700;">✏️ {{ _('admin_tests.edit') }}</a>
+          <form method="POST" action="{{ url_for('admin.test_delete', test_id=t._id) }}" style="display:inline;" onsubmit="return confirm('{{ t.title }} {{ _('admin_tests.confirm_delete') }}')">
+            <button type="submit" style="background:none;border:none;color:var(--red);cursor:pointer;font-weight:700;text-decoration:none;padding:0;font-size:inherit;">🗑️ {{ _('admin_tests.delete') }}</button>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="card" style="text-align:center;padding:60px 20px;grid-column:1/-1;">
+        <p style="color:var(--text-muted);font-size:16px;margin-bottom:8px;">{{ _('admin_tests.empty') }}</p>
+        <p style="color:var(--text-muted);font-size:14px;">{{ _('admin_tests.add_first') }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

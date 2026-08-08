@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Testga Tayyorgarlik{% endblock %}
+{% block content %}
+<section class="section" style="max-width:700px;margin:0 auto;padding:40px 20px;">
+  <div class="section-header">
+    <div class="hero-badge" style="display:inline-flex;">📝 IELTS Mock</div>
+    <h2>Testni boshlashdan oldin</h2>
+  </div>
+
+  <div class="card-grid" style="margin-bottom:28px;">
+    <div class="card">
+      <div class="card-icon green">📋</div>
+      <h3>20 ta savol</h3>
+      <p>Test NOVICE dan B1+ gacha barcha darajalarni qamrab oladi.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon orange">⏱️</div>
+      <h3>30 daqiqa</h3>
+      <p>Har bir savol uchun o'rtacha 1.5 daqiqa vaqt.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon blue">📊</div>
+      <h3>Daraja aniqlash</h3>
+      <p>Natijaga ko'ra darajangiz aniqlanadi.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">📝</div>
+      <h3>Grammatika</h3>
+      <p>Barcha savollar grammatik bilimingizni tekshiradi.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <h3 style="margin-bottom:12px;">📜 Qoidalar</h3>
+    <ul style="list-style:none;padding:0;">
+      <li style="padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;">✓ Har bir savol faqat bitta to'g'ri javobga ega</li>
+      <li style="padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;">✓ Savollarni o'tkazib yuborishingiz va qaytishingiz mumkin</li>
+      <li style="padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;">✓ Vaqt tugashi bilan test avtomatik yakunlanadi</li>
+      <li style="padding:10px 0;font-size:14px;">✓ Natijani faqat bir marta ko'rishingiz mumkin</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-bottom:24px;">
+    <div class="card" style="display:inline-block;border-color:var(--red);padding:24px 48px;">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">{{ _('test.price') }}</p>
+      <p style="font-size:36px;font-weight:900;color:var(--red);">{{ "{:,}".format(price) }} so'm</p>
+      <p style="font-size:12px;color:var(--text-muted);">Bir martalik to'lov, qayta topshirish bepul</p>
+    </div>
+  </div>
+
+  <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+    <p style="font-size:15px;color:var(--text-secondary);">To'lovni Telegram orqali amalga oshiring:</p>
+    <a href="https://t.me/IELTSZoneOnlineBot" target="_blank" class="btn btn-primary btn-lg" style="min-width:260px;">
+      ✈️ Telegram'da To'lov
+    </a>
+    <p style="font-size:12px;color:var(--text-muted);max-width:420px;line-height:1.5;">
+      To'lov chekini (skrinshot) <strong>@IELTSZoneOnlineBot</strong> ga yuboring. Admindan tasdiqdan so'ng testni boshlashingiz mumkin.
+    </p>
+    <div style="width:100%;text-align:center;color:var(--text-muted);font-size:13px;position:relative;">
+      <span style="background:var(--bg-secondary);padding:0 16px;position:relative;z-index:1;">{{ _('auth.or') }}</span>
+      <hr style="border:none;border-top:1px solid var(--border);margin-top:-9px;">
+    </div>
+    <a href="{{ url_for('tests.test_list') }}" class="btn btn-outline btn-lg">
+      🚀 Testni Bekor Boshlash
+    </a>
+  </div>
+</section>
+{% endblock %}

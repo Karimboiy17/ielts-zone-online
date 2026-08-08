@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ _('admin_writing.title') }}{% endblock %}
+{% block content %}
+<section class="section">
+  {% include "admin/_nav.html" %}
+  <div class="admin-container">
+        <h1>✍️ {{ _('admin_writing.title') }}</h1>
+        <p>{{ _('admin_writing.desc') }}</p>
+
+        {% if submissions %}
+        {% for s in submissions %}
+        <div class="review-card">
+            <div class="review-header">
+                <div class="review-user">
+                    <strong>👤 {{ s.user_name }}</strong>
+                    <span>📧 {{ s.user_email }}</span>
+                    <span style="font-size:12px;color:var(--text-muted);">🧪 {{ s.test_title }}</span>
+                    <span>{{ s.completed_at.strftime('%d.%m.%Y %H:%M') if s.completed_at else '' }}</span>
+                </div>
+            </div>
+            <div class="review-answers">
+                {% for a in s.answers %}
+                <div class="review-answer">
+                    <div class="review-q">{{ _('writing.task') }} {{ loop.index }}</div>
+                    <div class="review-text">{{ a.answer }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <form method="POST" action="{{ url_for('admin.grade_writing', attempt_id=s._id) }}" class="grade-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="grade-row">
+                    <div class="form-group">
+                        <label>{{ _('admin_writing.score_label') }}</label>
+                        <input type="number" name="score" min="0" max="25" required placeholder="0-25">
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label>{{ _('admin_writing.feedback_label') }}</label>
+                        <textarea name="feedback" placeholder="{{ _('admin_writing.feedback_placeholder') }}" rows="2"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">✅ {{ _('admin_writing.grade_button') }}</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <p>🎉 {{ _('admin_writing.all_done') }}</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}FAQ{% endblock %}
+{% block content %}
+<section class="section" style="max-width:700px;margin:0 auto;padding:60px 20px;">
+  <div class="section-header">
+    <h2>{{ _('faq.title') }}</h2>
+    <p>{{ _('faq.desc') }}</p>
+  </div>
+
+  {% set faqs = [
+    (_('faq.q1'), _('faq.a1').replace('{price}', price|int|string)),
+    (_('faq.q2'), _('faq.a2')),
+    (_('faq.q3'), _('faq.a3')),
+    (_('faq.q4'), _('faq.a4')),
+    (_('faq.q5'), _('faq.a5'))
+  ] %}
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for q, a in faqs %}
+    <div class="card" style="cursor:pointer;" onclick="this.querySelector('.faq-answer').style.display = this.querySelector('.faq-answer').style.display === 'none' ? 'block' : 'none'">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="font-size:16px;font-weight:700;">{{ q }}</h3>
+        <span style="font-size:20px;color:var(--red);">+</span>
+      </div>
+      <div class="faq-answer" style="display:none;margin-top:12px;color:var(--text-secondary);font-size:14px;line-height:1.6;border-top:1px solid var(--border);padding-top:12px;">
+        {{ a|safe }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

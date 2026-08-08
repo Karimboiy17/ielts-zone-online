@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}{{ _('home') }}{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        🇬🇧 {{ _('hero.badge') }}
+      </div>
+
+      <h1 class="hero-title">
+        {{ _('hero.title')|replace('yangi ', '<span class="highlight">yangi</span> ')|replace('darajaga ', '<span class="highlight">darajaga</span> ')|safe }}
+      </h1>
+
+      <p class="hero-desc">{{ _('hero.desc') }}</p>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="{{ url_for('tests.test_list') }}" class="btn btn-primary btn-lg">
+          🎯 {{ _('hero.start_test') }}
+        </a>
+        <a href="#cefr-levels" class="btn btn-outline btn-lg">
+          📊 {{ _('hero.levels') }}
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-num">500+</span>
+          <span class="hero-stat-label">{{ _('hero.students') }}</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">3</span>
+          <span class="hero-stat-label">{{ _('hero.test_types') }}</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">5</span>
+          <span class="hero-stat-label">{{ _('hero.cefr_levels') }}</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">{{ price|int }}</span>
+          <span class="hero-stat-label">{{ _('hero.price_per_test') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="ladder-card">
+        <div class="ladder-header">
+          <span>📈</span>
+          <span>Sizning taraqqiyotingiz</span>
+          <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">0%</span>
+        </div>
+        <div class="diagram-body">
+          <div class="diagram-chart">
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              <circle cx="65" cy="65" r="52" fill="none" stroke="var(--border)" stroke-width="10"/>
+              <circle cx="65" cy="65" r="52" fill="none" stroke="var(--red)" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" transform="rotate(-90 65 65)"/>
+              <text x="65" y="55" text-anchor="middle" fill="var(--text)" font-size="24" font-weight="800">0</text>
+              <text x="65" y="75" text-anchor="middle" fill="var(--text-muted)" font-size="11">test</text>
+            </svg>
+          </div>
+          <div class="diagram-milestone">
+            <div class="milestone-icon">🎯</div>
+            <div class="milestone-text">
+              <span class="milestone-label">Birinchi test</span>
+              <span class="milestone-desc">Hali test ishlamadingiz</span>
+            </div>
+          </div>
+        </div>
+        <div class="diagram-stats">
+          <div class="diagram-stat">
+            <span class="diagram-stat-num">0</span>
+            <span class="diagram-stat-label">Test</span>
+          </div>
+          <div class="diagram-stat">
+            <span class="diagram-stat-num">0%</span>
+            <span class="diagram-stat-label">O'rtacha</span>
+          </div>
+          <div class="diagram-stat">
+            <span class="diagram-stat-num">🔥0</span>
+            <span class="diagram-stat-label">Streak</span>
+          </div>
+        </div>
+        <div class="kaizen-quote">📈 1 test = 1 qadam. Bugun boshla!</div>
+        <div style="margin-top:12px;">
+          <a href="{{ url_for('tests.test_list') }}" class="btn btn-primary" style="width:100%;">
+            ⚡ {{ _('hero.find_level') }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Streak & Challenge -->
+<section class="section">
+  <div class="container">
+    <div class="streak-section" style="margin:0 auto;">
+      <div class="streak-card">
+        <div class="streak-icon">🔥</div>
+        <div class="streak-count">0</div>
+        <div class="streak-label">{{ _('streak.title') }}</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+          {{ _('streak.take_first') }}
+        </p>
+        <a href="{{ url_for('tests.test_list') }}" class="btn btn-primary btn-sm">
+          🏁 {{ _('streak.start') }}
+        </a>
+      </div>
+
+      <div class="challenge-card">
+        <div class="challenge-top">
+          <span class="challenge-type">⚡ {{ _('challenge.title') }}</span>
+          <span class="challenge-reward">+50 {{ _('challenge.reward') }}</span>
+        </div>
+        <div class="challenge-title">
+          "Daily News" matnini o'qib, 5/5 to'plang!
+        </div>
+        <div class="challenge-meta">
+          <span>📖 Reading</span>
+          <span>⏱️ 10 min</span>
+          <span>❓ 3 {{ _('test.questions') }}</span>
+        </div>
+        <a href="{{ url_for('tests.test_list') }}" class="btn btn-blue btn-sm">
+          {{ _('challenge.accept') }} →
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Test Types -->
+<section class="section" style="background:var(--bg);border-top:2px solid var(--border);border-bottom:2px solid var(--border);">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ _('section.skills_title') }}</h2>
+      <p>{{ _('section.skills_desc') }}</p>
+    </div>
+
+    <div class="card-grid">
+      <a href="{{ url_for('tests.test_list') }}" class="card" style="cursor:pointer;display:block;">
+        <div class="card-icon blue">📖</div>
+        <h3>{{ _('test_type.reading.title') }}</h3>
+        <p>{{ _('test_type.reading.desc') }}</p>
+        <div class="card-meta">
+          <span>⏱️ {{ _('test_type.reading.time') }}</span>
+          <span>📊 NOVICE–B1+</span>
+          <span>❓ {{ _('test_type.reading.q_count') }}</span>
+        </div>
+        <span class="btn btn-blue btn-sm">{{ _('test.start') }} →</span>
+      </a>
+
+      <a href="{{ url_for('tests.test_list') }}" class="card" style="cursor:pointer;display:block;">
+        <div class="card-icon orange">🎧</div>
+        <h3>{{ _('test_type.listening.title') }}</h3>
+        <p>{{ _('test_type.listening.desc') }}</p>
+        <div class="card-meta">
+          <span>⏱️ {{ _('test_type.listening.time') }}</span>
+          <span>📊 NOVICE–B1+</span>
+          <span>❓ {{ _('test_type.listening.q_count') }}</span>
+        </div>
+        <span class="btn btn-orange btn-sm">{{ _('test.start') }} →</span>
+      </a>
+
+      <a href="{{ url_for('tests.test_list') }}" class="card" style="cursor:pointer;display:block;">
+        <div class="card-icon purple">✍️</div>
+        <h3>{{ _('test_type.writing.title') }}</h3>
+        <p>{{ _('test_type.writing.desc') }}</p>
+        <div class="card-meta">
+          <span>⏱️ {{ _('test_type.writing.time') }}</span>
+          <span>📊 NOVICE–B1+</span>
+          <span>📝 {{ _('test_type.writing.topics') }}</span>
+        </div>
+        <span class="btn btn-primary btn-sm">{{ _('test.start') }} →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Levels -->
+<section class="section" id="cefr-levels">
+  <div class="container">
+    <div class="section-header">
+      <h2>🏔️ {{ _('cefr.levels_title') }}</h2>
+      <p>{{ _('cefr.levels_desc') }}</p>
+    </div>
+
+    <div class="levels-grid">
+      <div class="level-card">
+        <div class="level-emoji">🌱</div>
+        <div class="level-code">NOVICE</div>
+        <div class="level-name">{{ _('cefr.novice.name') }}</div>
+        <div class="level-desc">{{ _('cefr.novice.desc') }}</div>
+      </div>
+      <div class="level-card">
+        <div class="level-emoji">🔰</div>
+        <div class="level-code">A1</div>
+        <div class="level-name">{{ _('cefr.a1.name') }}</div>
+        <div class="level-desc">{{ _('cefr.a1.desc') }}</div>
+      </div>
+      <div class="level-card">
+        <div class="level-emoji">🌿</div>
+        <div class="level-code">A2</div>
+        <div class="level-name">{{ _('cefr.a2.name') }}</div>
+        <div class="level-desc">{{ _('cefr.a2.desc') }}</div>
+      </div>
+      <div class="level-card">
+        <div class="level-emoji">🌳</div>
+        <div class="level-code">B1</div>
+        <div class="level-name">{{ _('cefr.b1.name') }}</div>
+        <div class="level-desc">{{ _('cefr.b1.desc') }}</div>
+      </div>
+      <div class="level-card">
+        <div class="level-emoji">🌲</div>
+        <div class="level-code">B1+</div>
+        <div class="level-name">{{ _('cefr.b1plus.name') }}</div>
+        <div class="level-desc">{{ _('cefr.b1plus.desc') }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quote -->
+<section class="section" style="background:var(--red-bg);">
+  <div class="container">
+    <div class="quote-card">
+      <p class="quote-text">{{ _('quote.text') }}</p>
+      <p style="margin-top:16px;font-weight:800;font-size:15px;">🚀 {{ _('quote.author') }}</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" style="text-align:center;">
+  <div class="container">
+    <h2 style="font-size:32px;font-weight:800;margin-bottom:12px;">{{ _('cta.title') }} 🚀</h2>
+    <p style="color:var(--text-secondary);margin-bottom:24px;font-size:16px;">
+      {{ _('cta.desc') }}
+    </p>
+    <a href="{{ url_for('tests.test_list') }}" class="btn btn-primary btn-lg">
+      {{ _('cta.start') }} →
+    </a>
+  </div>
+</section>
+{% endblock %}

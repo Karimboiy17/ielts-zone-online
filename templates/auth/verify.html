@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Kodni kiriting{% endblock %}
+{% block content %}
+<section class="section" style="max-width:400px;margin:0 auto;padding:60px 20px;">
+  <div class="card" style="text-align:center;padding:32px;">
+    <div style="font-size:48px;margin-bottom:8px;">✉️</div>
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:4px;">Emailingizga kod yuborildi</h2>
+    <p style="color:var(--text-secondary);margin-bottom:8px;font-size:14px;">{{ email }} ga 6 xonali kod yuborildi</p>
+    <p style="color:var(--text-muted);font-size:12px;margin-bottom:24px;">Kodni kiriting yoki <a href="{{ url_for('auth.register') }}" style="color:var(--red);">qayta yuborish</a></p>
+
+    <form method="POST" style="text-align:center;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="email" value="{{ email }}">
+      <div style="margin-bottom:20px;">
+        <input type="text" name="code" placeholder="000000" maxlength="6" required
+               style="width:200px;padding:16px;border:2px solid var(--border);border-radius:12px;font-size:28px;text-align:center;letter-spacing:12px;font-weight:800;background:var(--bg);color:var(--text);outline:none;"
+               autocomplete="one-time-code">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%;padding:14px;font-size:16px;">✅ Tasdiqlash</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

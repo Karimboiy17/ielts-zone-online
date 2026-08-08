@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEFR Mock — Natijangiz 2x tez!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6C3BF5;
+            --primary-dark: #5228D0;
+            --primary-light: #F0EBFF;
+            --accent: #FF6B35;
+            --accent-soft: #FFF0E8;
+            --success: #10B981;
+            --gradient-1: linear-gradient(135deg, #6C3BF5, #FF6B35);
+            --gradient-2: linear-gradient(135deg, #6C3BF5, #5228D0);
+            --dark: #0F0F1A;
+            --dark-2: #1A1A2E;
+            --gray-100: #F8F7FC;
+            --gray-200: #EDEAF5;
+            --gray-300: #D5D0E0;
+            --gray-500: #8A84A0;
+            --gray-700: #4A4560;
+            --gray-900: #1A1A2E;
+            --white: #FFFFFF;
+            --shadow-sm: 0 2px 8px rgba(108, 59, 245, 0.06);
+            --shadow: 0 4px 20px rgba(108, 59, 245, 0.10);
+            --shadow-lg: 0 8px 40px rgba(108, 59, 245, 0.15);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-full: 50px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--gray-100);
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 0 40px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(108, 59, 245, 0.08);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--gradient-1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 900;
+            font-size: 16px;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 18px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--gray-700);
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+
+        .btn-primary {
+            background: var(--gradient-2);
+            color: white !important;
+            padding: 10px 24px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 13px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(108, 59, 245, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 59, 245, 0.4);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+            padding: 10px 24px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 13px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: var(--dark-2);
+            color: white;
+            padding: 100px 40px 90px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(108,59,245,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -40%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,107,53,0.10) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-left h1 {
+            font-size: 52px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+        .hero-left h1 .highlight {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-left p {
+            font-size: 17px;
+            opacity: 0.7;
+            max-width: 480px;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+        .hero-stat {
+            text-align: center;
+        }
+        .hero-stat .number {
+            font-size: 28px;
+            font-weight: 900;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-stat .label {
+            font-size: 12px;
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 14px;
+        }
+        .hero-buttons .btn-primary {
+            padding: 14px 36px;
+            font-size: 15px;
+        }
+
+        .hero-right {
+            background: rgba(255,255,255,0.04);
+            border-radius: var(--radius);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .hero-right h3 {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .hero-test-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hero-test-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+        .hero-test-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .hero-test-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .hero-test-icon.reading { background: rgba(108,59,245,0.2); }
+        .hero-test-icon.listening { background: rgba(16,185,129,0.2); }
+        .hero-test-icon.writing { background: rgba(255,107,53,0.2); }
+
+        .hero-test-info { flex: 1; }
+        .hero-test-info .name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .hero-test-info .meta {
+            font-size: 12px;
+            opacity: 0.5;
+            display: flex;
+            gap: 10px;
+        }
+
+        .hero-test-price {
+            font-weight: 800;
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        /* ===== SECTION ===== */
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 70px 40px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .section-title .tag {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 16px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .section-title h2 {
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: var(--dark);
+        }
+        .section-title p {
+            color: var(--gray-700);
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* ===== FEATURES ===== */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.25s, box-shadow 0.25s;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(108, 59, 245, 0.04);
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+        .feature-card .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 18px;
+        }
+        .feature-card:nth-child(1) .icon { background: var(--primary-light); color: var(--primary); }
+        .feature-card:nth-child(2) .icon { background: #E8F8F0; color: var(--success); }
+        .feature-card:nth-child(3) .icon { background: var(--accent-soft); color: var(--accent); }
+        .feature-card:nth-child(4) .icon { background: #FFF0F0; color: #EF4444; }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            color: var(--gray-700);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* ===== TEST CARDS ===== */
+        .test-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .test-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.25s, box-shadow 0.25s;
+            position: relative;
+            border: 1px solid rgba(108, 59, 245, 0.04);
+        }
+        .test-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+
+        .test-card .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+        .test-card .badge.reading { background: var(--primary-light); color: var(--primary); }
+        .test-card .badge.listening { background: #E8F8F0; color: var(--success); }
+        .test-card .badge.writing { background: var(--accent-soft); color: var(--accent); }
+        .test-card .badge.speaking { background: #F3E8FF; color: #8B5CF6; }
+
+        .test-card h3 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .test-card .details {
+            display: flex;
+            gap: 16px;
+            margin: 12px 0 18px;
+        }
+        .test-card .details span {
+            font-size: 13px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .test-card .action-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--gray-200);
+            padding-top: 18px;
+            margin-top: 4px;
+        }
+        .test-card .price {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+        .test-card .price small {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--gray-500);
+        }
+
+        .test-card .btn-start {
+            background: var(--gradient-2);
+            color: white;
+            padding: 10px 28px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .test-card .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(108, 59, 245, 0.3);
+        }
+
+        .test-card.coming-soon {
+            opacity: 0.6;
+        }
+        .test-card.coming-soon .btn-start {
+            background: var(--gray-300);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .test-card.coming-soon .price { color: var(--gray-500); }
+
+        /* ===== STEPS ===== */
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            position: relative;
+        }
+        .steps-container::before {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 15%;
+            right: 15%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+            z-index: 0;
+        }
+
+        .step-item {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .step-number {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+        }
+        .step-item:nth-child(1) .step-number { background: var(--gradient-2); }
+        .step-item:nth-child(2) .step-number { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+        .step-item:nth-child(3) .step-number { background: linear-gradient(135deg, var(--accent), var(--success)); }
+
+        .step-item h4 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+        .step-item p {
+            font-size: 14px;
+            color: var(--gray-700);
+        }
+
+        /* ===== CTA ===== */
+        .cta-section {
+            background: var(--dark-2);
+            border-radius: var(--radius);
+            padding: 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(108,59,245,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .cta-section h2 {
+            font-size: 36px;
+            font-weight: 900;
+            color: white;
+            position: relative;
+        }
+        .cta-section p {
+            color: rgba(255,255,255,0.6);
+            font-size: 16px;
+            margin: 12px 0 28px;
+            position: relative;
+        }
+        .cta-section .btn-primary {
+            padding: 14px 40px;
+            font-size: 16px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark);
+            color: rgba(255,255,255,0.5);
+            padding: 40px;
+            text-align: center;
+        }
+        .footer .logo-text {
+            font-size: 18px;
+        }
+        .footer p { font-size: 13px; margin-top: 6px; }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .nav-links { display: none; }
+            .hero { padding: 60px 20px; }
+            .hero-content { grid-template-columns: 1fr; gap: 40px; }
+            .hero-left h1 { font-size: 34px; }
+            .section { padding: 50px 20px; }
+            .section-title h2 { font-size: 26px; }
+            .steps-container { grid-template-columns: 1fr; }
+            .steps-container::before { display: none; }
+            .cta-section { padding: 40px 24px; }
+            .cta-section h2 { font-size: 26px; }
+        }
+        @media (max-width: 480px) {
+            .hero-stats { flex-direction: column; gap: 12px; }
+            .hero-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="#" class="logo">
+            <div class="logo-icon">CM</div>
+            <div class="logo-text">CEFR Mock</div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#">Bosh sahifa</a></li>
+            <li><a href="#">Testlar</a></li>
+            <li><a href="#">Natijalar</a></li>
+            <li><a href="#">Yordam</a></li>
+            <li><a href="#" class="btn-primary">Kirish</a></li>
+        </ul>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-left">
+                <h1>
+                    Ingliz tili<br>
+                    <span class="highlight">natijangiz 2x tez</span>
+                </h1>
+                <p>
+                    CEFR mock testlar bilan imtihonga tayyorlaning. 
+                    Real format, aniq natija — vaqtingizni bekorga sarflamang.
+                </p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="number">4</div>
+                        <div class="label">Test turi</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="number">15,000</div>
+                        <div class="label">So'm / section</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="number">2</div>
+                        <div class="label">Kunda writing</div>
+                    </div>
+                </div>
+                <div class="hero-buttons">
+                    <a href="#" class="btn-primary">Testni boshlash →</a>
+                    <a href="#" class="btn-accent">Batafsil</a>
+                </div>
+            </div>
+            <div class="hero-right float">
+                <h3>🔥 Hozir mavjud</h3>
+                <div class="hero-test-list">
+                    <div class="hero-test-item">
+                        <div class="hero-test-icon reading">📖</div>
+                        <div class="hero-test-info">
+                            <div class="name">Reading</div>
+                            <div class="meta"><span>⏱️ 60 min</span><span>40 savol</span></div>
+                        </div>
+                        <div class="hero-test-price">15,000</div>
+                    </div>
+                    <div class="hero-test-item">
+                        <div class="hero-test-icon listening">🎧</div>
+                        <div class="hero-test-info">
+                            <div class="name">Listening</div>
+                            <div class="meta"><span>⏱️ 40 min</span><span>30 savol</span></div>
+                        </div>
+                        <div class="hero-test-price">15,000</div>
+                    </div>
+                    <div class="hero-test-item">
+                        <div class="hero-test-icon writing">✍️</div>
+                        <div class="hero-test-info">
+                            <div class="name">Writing</div>
+                            <div class="meta"><span>⏱️ 60 min</span><span>2 topic</span></div>
+                        </div>
+                        <div class="hero-test-price">15,000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section">
+        <div class="section-title">
+            <div class="tag">★ Nega aynan biz</div>
+            <h2>Natija beradigan tayyorgarlik</h2>
+            <p>Vaqtingizni bekorga sarflamang — real imtihon formatida, real natija</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon">⚡</div>
+                <h3>Tez natija</h3>
+                <p>Reading va Listening natijalaringizni darhol olasiz. Writing 2 kunda.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🎯</div>
+                <h3>Real format</h3>
+                <p>Testlar haqiqiy CEFR imtihoniga moslashtirilgan — imtihongacha aynan shu formatni ko'rasiz.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">💰</div>
+                <h3>Hammasi o'z ichida</h3>
+                <p>Atigi <strong>15,000 so'm</strong> — bitta section uchun. Speaking tez orada!</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📊</div>
+                <h3>Batfsil tahlil</h3>
+                <p>Xatolaringizni ko'ring, qayerda kuchsiz ekaningizni bilib oling.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- TEST CARDS -->
+    <section class="section" style="padding-top: 0;">
+        <div class="section-title">
+            <div class="tag">🧪 Testlar</div>
+            <h2>O'zingizga kerakli testni tanlang</h2>
+            <p>Har bir section alohida — faqat kerakligini oling</p>
+        </div>
+        <div class="test-cards">
+            <div class="test-card">
+                <div class="badge reading">📖 Reading</div>
+                <h3>Reading</h3>
+                <p style="color: var(--gray-700); font-size: 14px;">Matn o'qish va tushunish qobiliyatingizni sinang</p>
+                <div class="details">
+                    <span>⏱️ 60 daqiqa</span>
+                    <span>📝 40 ta savol</span>
+                </div>
+                <div class="action-row">
+                    <div class="price">15,000 <small>so'm</small></div>
+                    <button class="btn-start">Boshlash →</button>
+                </div>
+            </div>
+
+            <div class="test-card">
+                <div class="badge listening">🎧 Listening</div>
+                <h3>Listening</h3>
+                <p style="color: var(--gray-700); font-size: 14px;">Tinglab tushunish — real audio materiallar asosida</p>
+                <div class="details">
+                    <span>⏱️ 40 daqiqa</span>
+                    <span>📝 30 ta savol</span>
+                </div>
+                <div class="action-row">
+                    <div class="price">15,000 <small>so'm</small></div>
+                    <button class="btn-start">Boshlash →</button>
+                </div>
+            </div>
+
+            <div class="test-card">
+                <div class="badge writing">✍️ Writing</div>
+                <h3>Writing</h3>
+                <p style="color: var(--gray-700); font-size: 14px;">Yozma qobiliyatingiz — mutaxassis tomonidan tekshiriladi</p>
+                <div class="details">
+                    <span>⏱️ 60 daqiqa</span>
+                    <span>✍️ 2 ta topic</span>
+                </div>
+                <div class="action-row">
+                    <div class="price">15,000 <small>so'm</small></div>
+                    <button class="btn-start">Boshlash →</button>
+                </div>
+            </div>
+
+            <div class="test-card coming-soon">
+                <div class="badge speaking">🎙️ Speaking</div>
+                <h3>Speaking</h3>
+                <p style="color: var(--gray-700); font-size: 14px;">Og'zaki qism — tez orada!</p>
+                <div class="details">
+                    <span>⏱️ 15 daqiqa</span>
+                    <span>🎤 3 qism</span>
+                </div>
+                <div class="action-row">
+                    <div class="price" style="font-size: 16px; color: var(--gray-500);">Tez orada</div>
+                    <button class="btn-start" disabled>⏳ Tayyorlanmoqda</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STEPS -->
+    <section class="section" style="padding-top: 0;">
+        <div class="section-title">
+            <div class="tag">⚡ 3 qadam</div>
+            <h2>Natijaga qanday erishasiz?</h2>
+            <p>Qiziqarli va tez — roppa-rosa 3 qadamda natijangizni oling</p>
+        </div>
+        <div class="steps-container">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <h4>Testni tanlang</h4>
+                <p>Reading, Listening yoki Writing — qaysi biri kerak bo'lsa, o'shani tanlang</p>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <h4>To'lov qiling</h4>
+                <p>15,000 so'm to'lab, testni boshlang — hech qanday obuna yo'q</p>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <h4>Natijani oling</h4>
+                <p>Reading va Listening — darhol. Writing — 2 kunda. Hammasi tayyor!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section" style="padding-top: 0;">
+        <div class="cta-section">
+            <h2>Tayyormisiz? 🚀</h2>
+            <p>Ingliz tili imtihoniga tayyorgarlikni bugunoq boshlang. Natijangiz 2x tez!</p>
+            <a href="#" class="btn-primary">Testni boshlash →</a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="logo-text">CEFR Mock</div>
+        <p>© 2024 — Ingliz tili imtihoniga tayyorgarlik platformasi</p>
+    </footer>
+</body>
+</html>
