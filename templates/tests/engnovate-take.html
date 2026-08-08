@@ -458,6 +458,7 @@ var STEP_LABELS = {0: '🎧 LISTENING', 1: '📖 READING', 2: '✍️ WRITING'};
 var currentStep = 0;
 var timerInterval = null;
 var timeLeft = 0;
+var stepRemaining = {0: 0, 1: 35*60, 2: 15*60};  // per-step remaining time (never resets)
 var audioPlayed = false;  // listening audio: only one play allowed
 
 // Determine steps: which part-cards belong to which step
@@ -485,14 +486,14 @@ function showStep(step) {
     2: '⏱️ Writing — 15 daqiqa'
   };
   document.getElementById('stepHint').textContent = hints[step];
-  // Timer management
+  // Timer management — RESTORE saved remaining time (never resets on re-entry)
   clearInterval(timerInterval);
   document.getElementById('testTimer').classList.remove('warning', 'danger');
   if (step === 0) {
     // Listening: no countdown (audio controls the time); show audio duration instead
     document.getElementById('testTimer').textContent = '--:--';
   } else {
-    timeLeft = STEP_TIMES[step];
+    timeLeft = stepRemaining[step];
     updateTimerDisplay();
     timerInterval = setInterval(tick, 1000);
   }
@@ -502,8 +503,10 @@ function showStep(step) {
 
 function tick() {
   timeLeft--;
+  stepRemaining[currentStep] = timeLeft;  // persist remaining time
   if (timeLeft <= 0) {
     clearInterval(timerInterval);
+    stepRemaining[currentStep] = 0;
     updateTimerDisplay();
     if (currentStep === 1) { goStep(1); }        // reading time up → writing
     else if (currentStep === 2) { submitForm(); } // writing time up → submit
