@@ -573,6 +573,16 @@ function nextStep() {
     return;
   }
   if (currentStep === 0) {
+    // Audio hali tugamagan bo'lsa — ogohlantirib so'raymiz
+    if (!listeningStarted) {
+      if (!confirm('⚠️ Audio hali eshitilmagan!\n\nListening savollariga javob berish uchun avval audioni eshiting.\nBaribir Readingga o'tasizmi?')) {
+        return;
+      }
+    } else if (!listeningEnded) {
+      if (!confirm('⚠️ Audio hali tugamagan!\n\nReadingga o'tsangiz, listening qismiga qaytib bo'lmaydi.\nBaribir davom etasizmi?')) {
+        return;
+      }
+    }
     showStep(1);
   } else if (currentStep === 1) {
     showStep(2);
@@ -602,6 +612,7 @@ showStep(0);
 
 // Listening audio: play once via a simple button (no controls, no seeking)
 var listeningStarted = false;
+var listeningEnded = false;
 function playListeningAudio(btn) {
   var audio = document.getElementById('listenAudio');
   if (!audio) return;
@@ -620,6 +631,7 @@ function playListeningAudio(btn) {
     }, 500);
   });
   audio.addEventListener('ended', function() {
+    listeningEnded = true;
     btn.textContent = '🔊 Audio eshitildi ✓';
   });
 }
