@@ -978,6 +978,9 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
             if val:
                 writing_text = str(val)
 
+    # Per-section breakdown: correct/total + wrong question numbers
+    section_breakdown = _build_section_breakdown(test, attempt)
+
     text = (
         f"📊 <b>IMTIHON NATIJASI</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
@@ -992,6 +995,19 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
         f"🏆 Daraja: <b>{level['level']} — {level['label']}</b>\n"
         f"🕒 Vaqt: {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M')}"
     )
+
+    # Add per-section details
+    if section_breakdown:
+        text += "\n\n━━━━━━━━━━━━━━━━\n📋 <b>SECTION TAHLILI:</b>"
+        for sec, info in section_breakdown.items():
+            icon = {"listening": "🎧", "reading": "📖", "writing": "✍️"}.get(sec, "📝")
+            sec_title = {"listening": "Listening", "reading": "Reading", "writing": "Writing"}.get(sec, sec)
+            text += f"\n{icon} <b>{sec_title}:</b> {info['correct']}/{info['total']} to'g'ri"
+            if info["wrong"]:
+                text += f"\n   ❌ Noto'g'ri: {len(info['wrong'])} ta — savol(lar): {', '.join(str(w) for w in info['wrong'])}"
+            else:
+                text += "\n   ✅ Hammasi to'g'ri"
+
     if writing_text:
         # Cap writing text at 2000 chars (Telegram limit)
         capped = writing_text if len(writing_text) <= 2000 else writing_text[:1997] + "..."
@@ -1001,3 +1017,102 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
         json={"chat_id": admin_chat, "text": text, "parse_mode": "HTML"},
         timeout=10,
     )
+
+
+def _build_section_breakdown(test, attempt):
+    """Build per-section stats: {section: {correct, total, wrong:[numbers]}}."""
+    from collections import OrderedDict
+
+    questions = test.get("questions", [])
+    answers_map = {}
+    for a in attempt.get("answers", []):
+        answers_map[a["question_id"]] = a
+
+    # Map each question block -> list of individual question numbers and correctness
+    breakdown = OrderedDict()
+    for q in questions:
+        qid = q["id"]
+        section = q.get("section", "?")
+        qtype = q.get("type", "")
+        start = q.get("start_num", 1)
+        stored = answers_map.get(qid, {})
+        user_ans = stored.get("user_answer")
+
+        if section not in breakdown:
+            breakdown[section] = {"correct": 0, "total": 0, "wrong": []}
+
+        # Writing task (free text) — teacher review, count separately
+        if qtype == "writing" and not q.get("gap_items"):
+            breakdown[section]["total"] += 1
+            continue
+
+        # Gap-fill: each gap is a numbered question
+        if qtype == "writing" and q.get("gap_items"):
+            gaps = q.get("gap_items", [])
+            parts = []
+            if isinstance(user_ans, str) and user_ans:
+                parts = user_ans.split(",")
+            for i, gap in enumerate(gaps):
+                num = start + i
+                breakdown[section]["total"] += 1
+                ua = parts[i].strip().lower() if i < len(parts) else ""
+                if ua == str(gap).strip().lower():
+                    breakdown[section]["correct"] += 1
+                else:
+                    breakdown[section]["wrong"].append(num)
+            continue
+
+        # multiple_group: each item is a numbered question
+        if qtype == "multiple_group":
+            items = q.get("items", [])
+            for i, item in enumerate(items):
+                num = start + i
+                breakdown[section]["total"] += 1
+                ok = False
+                if isinstance(user_ans, dict):
+                    key = str(i)
+                    if key in user_ans and user_ans[key] is not None:
+                        try:
+                            ok = int(user_ans[key]) == int(item.get("answer"))
+                        except (ValueError, TypeError):
+                            ok = False
+                if ok:
+                    breakdown[section]["correct"] += 1
+                else:
+                    breakdown[section]["wrong"].append(num)
+            continue
+
+        # Matching: each option is a numbered question
+        if qtype == "matching":
+            correct_ans = q.get("answer", [])
+            for i, expected in enumerate(correct_ans):
+                num = start + i
+                breakdown[section]["total"] += 1
+                ok = False
+                if isinstance(user_ans, dict):
+                    key = str(i)
+                    if key in user_ans and user_ans[key] is not None:
+                        try:
+                            ok = int(user_ans[key]) == int(expected)
+                        except (ValueError, TypeError):
+                            ok = False
+                if ok:
+                    breakdown[section]["correct"] += 1
+                else:
+                    breakdown[section]["wrong"].append(num)
+            continue
+
+        # Simple multiple / true_false
+        breakdown[section]["total"] += 1
+        ok = False
+        if user_ans is not None:
+            try:
+                ok = int(user_ans) == int(q.get("answer"))
+            except (ValueError, TypeError):
+                ok = False
+        if ok:
+            breakdown[section]["correct"] += 1
+        else:
+            breakdown[section]["wrong"].append(start)
+
+    return breakdown
