@@ -15,7 +15,7 @@
 // Auto-login via Telegram WebApp initData, then open the test directly
 (function() {
     function goToTest() {
-        location.href = '{{ url_for("tests.mini_test", section=section) }}';
+        location.href = '/m/{{ section }}/';
     }
     if (window.Telegram && window.Telegram.WebApp) {
         try {

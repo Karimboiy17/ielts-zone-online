@@ -39,6 +39,12 @@ def create_app(config_class=Config):
     app.register_blueprint(tests_bp, url_prefix="/tests")
     app.register_blueprint(payment_bp, url_prefix="/payment")
     app.register_blueprint(admin_bp, url_prefix="/admin")
+
+    # Mini app entry at root path (no /tests prefix): /m/<section>/
+    @app.route("/m/<section>/")
+    def mini_app_entry(section):
+        from app.routes.tests import mini_test
+        return mini_test(section)
     app.register_blueprint(profile_bp, url_prefix="/profile")
     app.register_blueprint(audio_bp, url_prefix="/audio")
 
