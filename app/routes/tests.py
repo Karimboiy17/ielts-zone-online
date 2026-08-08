@@ -970,6 +970,14 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
         if a.get("correct"):
             correct += 1
 
+    # Extract writing answer(s) if present
+    writing_text = ""
+    for a in attempt.get("answers", []):
+        if a.get("question_id") == "w1" or (isinstance(a.get("user_answer"), str) and len(str(a.get("user_answer", ""))) > 20):
+            val = a.get("user_answer")
+            if val:
+                writing_text = str(val)
+
     text = (
         f"📊 <b>IMTIHON NATIJASI</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
@@ -984,6 +992,10 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
         f"🏆 Daraja: <b>{level['level']} — {level['label']}</b>\n"
         f"🕒 Vaqt: {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M')}"
     )
+    if writing_text:
+        # Cap writing text at 2000 chars (Telegram limit)
+        capped = writing_text if len(writing_text) <= 2000 else writing_text[:1997] + "..."
+        text += f"\n\n━━━━━━━━━━━━━━━━\n✍️ <b>WRITING JAVOBI:</b>\n<i>{capped}</i>"
     _req.post(
         f"https://api.telegram.org/bot{bot_token}/sendMessage",
         json={"chat_id": admin_chat, "text": text, "parse_mode": "HTML"},
