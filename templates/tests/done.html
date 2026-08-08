@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Test topshirildi — IELTS ZONE online{% endblock %}
+{% block extra_head %}
+<style>
+html, body { height: 100%; margin: 0; }
+.navbar, .footer { display: none !important; }
+body { background: var(--bg-secondary); }
+.done-wrap {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; min-height: 100dvh; padding: 24px;
+}
+.done-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px 32px; max-width: 380px;
+  width: 100%; text-align: center;
+}
+.done-icon { font-size: 56px; margin-bottom: 16px; }
+.done-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.done-score { font-size: 44px; font-weight: 900; color: var(--red); margin: 16px 0 4px; }
+.done-level { font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; }
+.done-msg { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+.btn-close {
+  display: inline-block; padding: 14px 32px;
+  background: var(--red); color: #fff; border: none;
+  border-radius: 10px; font-size: 15px; font-weight: 800;
+  text-decoration: none; cursor: pointer; width: 100%;
+}
+.btn-close:hover { background: var(--red-dark); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="done-wrap">
+  <div class="done-card">
+    <div class="done-icon">🎉</div>
+    <div class="done-title">Test topshirildi!</div>
+    <div class="done-score">{{ score }}%</div>
+    <div class="done-level">{{ level }} — {{ label }}</div>
+    <div class="done-msg">
+      Javoblaringiz qabul qilindi va o'qituvchingizga yuborildi.<br>
+      Natija tez orada e'lon qilinadi. 📊
+    </div>
+    <button class="btn-close" onclick="closeApp()">✅ Yopish</button>
+  </div>
+</div>
+<script>
+function closeApp() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    try { Telegram.WebApp.close(); } catch(e) {}
+  } else {
+    // Outside Telegram: just show a note
+    document.querySelector('.done-msg').textContent = 'Imtihon yakunlandi. Telegram bot orqali natijani bilib olasiz.';
+  }
+}
+</script>
+{% endblock %}

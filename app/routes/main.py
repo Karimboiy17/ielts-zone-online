@@ -31,8 +31,9 @@ def toggle_dark():
 
 @main_bp.route("/")
 def index():
-    # App-mode: students land directly on the tests page (no marketing dashboard)
-    return redirect(url_for("tests.test_list"))
+    # App-mode: everything goes through the Telegram bot — redirect to a
+    # neutral page that tells users to use the bot (no old site content).
+    return render_template("main/app-only.html")
 
 
 @main_bp.route("/about")

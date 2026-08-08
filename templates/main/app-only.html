@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}IELTS ZONE online{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:70vh;flex-direction:column;gap:16px;text-align:center;padding:24px;">
+    <div style="font-size:56px;">📱</div>
+    <h2 style="font-size:22px;font-weight:800;color:var(--text);margin:0;">Imtihonlar Telegram bot orqali</h2>
+    <p style="font-size:14px;color:var(--text-muted);max-width:320px;line-height:1.6;">
+        Imtihon topshirish uchun Telegram botga o'ting va o'qituvchingizdan olingan kodni yuboring.
+    </p>
+    <a href="{{ telegram_bot_url }}" target="_blank" class="btn btn-primary btn-lg" style="margin-top:8px;">
+        ✈️ Botga o'tish
+    </a>
+</div>
+{% endblock %}

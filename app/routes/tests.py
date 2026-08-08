@@ -54,14 +54,21 @@ def start_test(section):
 def mini_test(section):
     """Mini app entry: opens the test DIRECTLY (no site login page).
     Access is granted by the bot code — no site login required.
-    User is identified via Telegram WebApp initData (auto-login bridge)."""
+    Reuses existing attempt on reload (no duplicate attempts)."""
     test = TestModel.get_by_section(section)
     if not test:
         flash("Test topilmadi", "error")
-        return redirect(url_for("tests.test_list"))
+        return redirect(url_for("main.index"))
 
-    # Ensure we have a user — auto-login via initData or anonymous fallback
+    # Reuse existing unfinished attempt for this user+section if present
     user_id = current_user.id if current_user.is_authenticated else _ensure_anonymous_user()
+    existing = mongo.db.attempts.find_one({
+        "user_id": ObjectId(user_id),
+        "section": section,
+        "status": "started",
+    })
+    if existing:
+        return redirect(url_for("tests.take_test_all", attempt_id=existing["_id"]))
 
     attempt = TestAttempt.create(user_id, test["_id"], section)
     return redirect(url_for("tests.take_test_all", attempt_id=attempt["_id"]))
@@ -821,7 +828,11 @@ def submit_test_all(attempt_id):
     except Exception as e:
         print(f"Admin notify error: {e}")
 
-    return redirect(url_for("tests.result", attempt_id=attempt_id))
+    # Show completion page inside the mini app (no redirect to old site)
+    return render_template("tests/done.html",
+                         score=percentage,
+                         level=level["level"],
+                         label=level["label"])
 
 
 def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init=""):
