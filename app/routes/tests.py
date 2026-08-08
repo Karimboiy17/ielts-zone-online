@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, session
 from flask_login import login_required, current_user
 from app.models import TestModel, TestAttempt
-from app.extensions import mongo
+from app.extensions import mongo, csrf
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
 import json
@@ -726,6 +726,7 @@ def _gap_answer_ok(user_val, correct_val):
 
 
 @tests_bp.route("/take/<attempt_id>/all/submit", methods=["POST"])
+@csrf.exempt
 def submit_test_all(attempt_id):
     """Collect all answers from the single-page form, grade, save.
     Access granted via bot code — no site login required."""
