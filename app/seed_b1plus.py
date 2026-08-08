@@ -1,42 +1,16 @@
-#!/usr/bin/env python3
-"""Seed B1+ MID exam into IELTS ZONE online platform — PART-BASED (one page per part)."""
-import sys, os
-
-BASE = "/home/karimboy/projects/ielts-zone-online"
-SITE = os.path.join(BASE, ".venv", "lib", "python3.11", "site-packages")
-sys.path.insert(0, BASE)
-sys.path.insert(0, SITE)
-
-from pymongo import MongoClient
+"""Auto-seed B1+ MID test data into MongoDB (used at app startup on Railway)."""
 from datetime import datetime, timezone
-
-# Use MONGO_URI from env if set (Railway), else localhost
-_uri = os.getenv("MONGO_URI") or os.getenv("MONGO_URL") or "mongodb://localhost:27017/ielts_zone"
-_client = MongoClient(_uri)
-_db_name = os.getenv("MONGO_DB_NAME", "ielts_zone")
-# Extract db name from URI if present, else use MONGO_DB_NAME
-try:
-    _path = _uri.split("//", 1)[1].split("/", 1)
-    if len(_path) > 1 and _path[1]:
-        _db_name = _path[1].split("?")[0]
-except Exception:
-    pass
-client = _client
-db = client[_db_name]
 
 # ============ AUDIO PARTS (B1+ MID Listening) ============
 A1 = "/static/audio/b1mid_listening_full.mp3"
 A2 = "/static/audio/b1mid_listening_full.mp3"
 A3 = "/static/audio/b1mid_listening_full.mp3"
 A4 = "/static/audio/b1mid_listening_full.mp3"
-# 4 listening parts -> same full audio for all (single audio file)
 audio_parts = [A1, A2, A3, A4]
 
 IMG = "/static/images/b1mid/"
 
-# ============ LISTENING (4 parts = 4 pages) ============
-listening_questions = [
-    # --- Part 1 (Q1-5): picture questions, one page ---
+LISTENING_QUESTIONS = [
     {"id": "l_p1", "type": "multiple_group", "section": "listening", "part": 1, "start_num": 1,
      "question": "You will hear five short conversations. Choose the correct picture (A, B, or C).\nYou will hear each conversation twice.",
      "points": 5,
@@ -52,8 +26,6 @@ listening_questions = [
          {"q": "5. Which programme has been cancelled?", "image": IMG + "lq42.png",
           "options": ["A", "B", "C"], "answer": 1},
      ]},
-
-    # --- Part 2 (Q6-10): gap-fill, one page ---
     {"id": "l_p2", "type": "writing", "section": "listening", "part": 2, "start_num": 6,
      "question": "You will hear a manager called Sandra talking about a company training day.\nFor each question, write the correct answer in the gap.",
      "title": "Company Training Day",
@@ -61,8 +33,6 @@ listening_questions = [
      "gap_items": ["DIFFERENT BUILDING", "13 SEPTEMBER", "EXERCISES", "TRAINING MANAGER", "(COMPANY) RESTAURANT"],
      "gap_labels": ["6", "7", "8", "9", "10"],
      "points": 5},
-
-    # --- Part 3 (Q11-15): MC, one page ---
     {"id": "l_p3", "type": "multiple_group", "section": "listening", "part": 3, "start_num": 11,
      "question": "You will hear an interview with a student called Emily, who walks people's dogs.\nChoose the correct answer A, B, or C.",
      "points": 5,
@@ -83,8 +53,6 @@ listening_questions = [
           "options": ["are very busy.", "expect her to help them whenever they need it.", "have well-behaved dogs."],
           "answer": 2},
      ]},
-
-    # --- Part 4 (Q16-20): YES/NO, one page ---
     {"id": "l_p4", "type": "multiple_group", "section": "listening", "part": 4, "start_num": 16,
      "question": "You will hear a woman called Anne and a man called Peter talking about a college party.\nDecide if each sentence is correct or incorrect.\nIf it is correct, write YES. If it is not correct, write NO.",
      "points": 5,
@@ -101,23 +69,6 @@ listening_questions = [
           "options": ["YES", "NO"], "answer": 0},
      ]},
 ]
-
-# ============ READING (5 parts = 5 pages) ============
-EVENTS_TEXT = """A Open Air Entertainment — From old black-and-white classics to the latest award-winning films. We open for the summer season this Saturday. Come along and enjoy your favourite film in the evening, outside under the stars! Children under 13 enter for free.
-
-B Find Robert the Rabbit — Bring the children along to our annual 'Find Robert' event at Kings Shelley Park this Saturday morning. Each year Robert finds a different place to hide away. Lots of running around and fun for children of all ages!
-
-C Open Gardens — We're pleased to announce this popular summer event will be taking place this weekend. For anyone interested in gardens and gardening, now's your chance to have a look at some of the best in town as people open up their gardens to visitors any time between 9.00 and 5.00. Children are welcome.
-
-D Tom and Larry's Garden Party — This Sunday Tom and Larry will be performing your favourite tunes and a few new ones you may not have heard of. Entrance fee for the evening entertainment includes an evening of music, a buffet with a wide range of food and hot and cold drinks along with ice-cream for the kids.
-
-E Mansfield Arts Market — Come along this Sunday to check out some of the fantastic artistic talent the region has to offer. Have a look at some of the works and support our local artists by buying one to take home. We also have facepainting for the younger children and an art workshop for children who want to have a go themselves.
-
-F Art Attack — Come along to our art club for children this weekend. We offer a safe place where children from 6-16 can have time working alone or with others on a piece of art. And if your child needs help with their schoolwork there'll be someone available to offer help and advice.
-
-G Wanted: Young Musicians — For ages 14 and over, Middlechurch Musicians are holding a series of activities over the weekend for young people of any ability to learn or practise an instrument of their choice. Bring your child and their favourite instrument along, or if they haven't got to this stage let them try one of our own.
-
-H Hassocks Green Festival — In addition to our regular favourites, organisers this year have introduced a children's theme. Take a chair, then relax and enjoy action films and some of the funniest cartoons that will keep your kids entertained. The festival opens on Sunday at 10.00 and is free."""
 
 EVENTS = [
     "Open Air Entertainment — From old black-and-white classics to the latest award-winning films. We open for the summer season this Saturday. Come along and enjoy your favourite film in the evening, outside under the stars! Children under 13 enter for free.",
@@ -148,8 +99,7 @@ However, my works have only ever been seen by trusted friends and relatives. The
 
 MAMBA_TEXT = """A bite from the Black Mamba is (21) ________ the 'kiss of death' in South Africa and it is (22) ________ a very dangerous snake. The venom can kill a person within 30 minutes to a few hours (23) ________ medical help. It is one of the world's fastest snakes as well and can travel at up to 16 kilometres an hour, though it uses this speed to (24) ________ danger rather than to attack. In fact, the Black Mamba is a rather (25) ________ creature and will avoid people if possible. It can measure anywhere between two and four metres long and, depending on the area where it lives, can be a different colour, from brown to green to grey. It gets its name from the inside of its mouth, which is ink black."""
 
-reading_questions = [
-    # --- Part 1 (Q1-5): picture questions, one page ---
+READING_QUESTIONS = [
     {"id": "r_p1", "type": "multiple_group", "section": "reading", "part": 1, "start_num": 1,
      "question": "Look at the text in each question.\nWhat does it say?\nCircle the correct letter A, B or C.",
      "instruction": "Look at the text in each question.\nWhat does it say?\nCircle the correct letter A, B or C.",
@@ -171,8 +121,6 @@ reading_questions = [
           "options": ["Driver needed for five hours a week.", "Lifts available to community centre.", "Driver needed for retired people."],
           "answer": 0},
      ]},
-
-    # --- Part 2 (Q6-10): matching people to events, one page ---
     {"id": "r_p2", "type": "matching", "section": "reading", "part": 2, "start_num": 6,
      "question": "The people below are all looking for something to do this weekend.\nOn the opposite page there are descriptions of eight events.\nDecide which event would be the most suitable for the people below.",
      "instruction": "The people below are all looking for something to do this weekend.\nOn the opposite page there are descriptions of eight events.\nDecide which event would be the most suitable for the people below.",
@@ -191,8 +139,6 @@ reading_questions = [
                "D Tom and Larry's Garden Party", "E Mansfield Arts Market", "F Art Attack",
                "G Wanted: Young Musicians", "H Hassocks Green Festival"],
      "answer": [5, 1, 7, 3, 0]},
-
-    # --- Part 3 (Q11-15): YES/NO motorbike, one page ---
     {"id": "r_p3", "type": "multiple_group", "section": "reading", "part": 3, "start_num": 11,
      "question": "Look at the sentences below about a motorbike trip.\nRead the text to decide if each sentence is correct or incorrect.\nIf it is correct, write YES. If it is not correct, write NO.",
      "instruction": "Look at the sentences below about a motorbike trip.\nRead the text to decide if each sentence is correct or incorrect.\nIf it is correct, write YES. If it is not correct, write NO.",
@@ -211,8 +157,6 @@ reading_questions = [
          {"q": "15. Luke and Graham's mood improved after they reached Graham's house.",
           "options": ["YES", "NO"], "answer": 0},
      ]},
-
-    # --- Part 4 (Q16-20): MC Robert Taylor, one page ---
     {"id": "r_p4", "type": "multiple_group", "section": "reading", "part": 4, "start_num": 16,
      "question": "For each question, choose the correct answer.",
      "instruction": "For each question, choose the correct answer.",
@@ -236,8 +180,6 @@ reading_questions = [
           "options": ["Robert Taylor tells us how a love of art can lead to a change of career.", "If your child shows an interest in art, Robert Taylor will explain how to support this activity.", "After years in the shadows, Robert Taylor is about to face the public with his works.", "If you're keen on developing your artistic skills, Robert Taylor explains how to get support from friends and relatives."],
           "answer": 2},
      ]},
-
-    # --- Part 5 (Q21-25): gap-fill MC Black Mamba, one page ---
     {"id": "r_p5", "type": "multiple_group", "section": "reading", "part": 5, "start_num": 21,
      "question": "For each question, choose the correct answer.",
      "instruction": "For each question, choose the correct answer.",
@@ -259,33 +201,28 @@ reading_questions = [
      ]},
 ]
 
-# ============ WRITING (1 page) ============
-writing_questions = [
+WRITING_QUESTIONS = [
     {"id": "w1", "type": "writing", "section": "writing", "start_num": 1,
      "question": "Your class is organizing a cultural evening at school.\n\nWrite an email to your teacher, Mr. Williams.\n\nIn your email:\n• Invite him to attend\n• Explain why the event is special\n• Tell him what role he could play during the evening\n\nWrite at least 100 words.",
      "word_limit": "100", "points": 20},
 ]
 
-# ============ BUILD TEST DOC ============
-test = {
-    "section": "b1plus_mid",
-    "title": "B1+ · MID",
-    "icon": "📘",
-    "time_limit": 70,
-    "price": 0,
-    "original_price": 0,
-    "active": True,
-    "description": "B1+ daraja oraliq imtihoni — Listening + Reading + Writing",
-    "audio_parts": audio_parts,
-    "created_at": datetime.now(timezone.utc),
-    "questions": listening_questions + reading_questions + writing_questions,
-}
 
-# Upsert
-db.tests.delete_many({"section": "b1plus_mid"})
-db.tests.insert_one(test)
-
-total_q = len(test["questions"])
-print(f"✅ B1+ MID test yaratildi: {total_q} part (sahifa)")
-print(f"   Listening: {len(listening_questions)} part, Reading: {len(reading_questions)} part, Writing: {len(writing_questions)} part")
-print(f"   Audio parts: {len(audio_parts)}")
+def seed_b1plus_mid(db):
+    """Insert or replace the B1+ MID test document."""
+    test = {
+        "section": "b1plus_mid",
+        "title": "B1+ · MID",
+        "icon": "📘",
+        "time_limit": 70,
+        "price": 0,
+        "original_price": 0,
+        "active": True,
+        "description": "B1+ daraja oraliq imtihoni — Listening + Reading + Writing",
+        "audio_parts": audio_parts,
+        "created_at": datetime.now(timezone.utc),
+        "questions": LISTENING_QUESTIONS + READING_QUESTIONS + WRITING_QUESTIONS,
+    }
+    db.tests.delete_many({"section": "b1plus_mid"})
+    db.tests.insert_one(test)
+    return len(test["questions"])
