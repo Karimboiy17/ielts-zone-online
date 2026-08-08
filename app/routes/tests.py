@@ -53,16 +53,38 @@ def start_test(section):
 @tests_bp.route("/m/<section>/")
 def mini_test(section):
     """Mini app entry: opens the test DIRECTLY (no site login page).
+    Access is granted by the bot code — no site login required.
     User is identified via Telegram WebApp initData (auto-login bridge)."""
-    if current_user.is_authenticated:
-        test = TestModel.get_by_section(section)
-        if not test:
-            flash("Test topilmadi", "error")
-            return redirect(url_for("tests.test_list"))
-        attempt = TestAttempt.create(current_user.id, test["_id"], section)
-        return redirect(url_for("tests.take_test_all", attempt_id=attempt["_id"]))
-    # Not logged in yet: render bridge page that auto-logs-in via TG initData
-    return render_template("tests/tg-auth-bridge.html", section=section)
+    test = TestModel.get_by_section(section)
+    if not test:
+        flash("Test topilmadi", "error")
+        return redirect(url_for("tests.test_list"))
+
+    # Ensure we have a user — auto-login via initData or anonymous fallback
+    user_id = current_user.id if current_user.is_authenticated else _ensure_anonymous_user()
+
+    attempt = TestAttempt.create(user_id, test["_id"], section)
+    return redirect(url_for("tests.take_test_all", attempt_id=attempt["_id"]))
+
+
+def _ensure_anonymous_user():
+    """Create/fetch a shared anonymous user for bot-code access (no site login)."""
+    from app.extensions import mongo
+    from werkzeug.security import generate_password_hash as gph
+    import secrets
+    anon = mongo.db.users.find_one({"username": "bot_guest"})
+    if anon:
+        return str(anon["_id"])
+    result = mongo.db.users.insert_one({
+        "username": "bot_guest",
+        "name": "O'quvchi",
+        "email": "guest@ieltszone.uz",
+        "password": gph(secrets.token_hex(16)),
+        "telegram": "",
+        "role": "user",
+        "created_at": datetime.now(timezone.utc),
+    })
+    return str(result.inserted_id)
 
 
 @tests_bp.route("/take/<attempt_id>")
@@ -621,11 +643,15 @@ def _render_mc_gaps(passage, items, qi):
 
 
 @tests_bp.route("/take/<attempt_id>/all")
-@login_required
 def take_test_all(attempt_id):
-    """Engnovate-style single-page test: all parts on one scrollable page."""
+    """Engnovate-style single-page test: all parts on one scrollable page.
+    Access granted via bot code — no site login required."""
     attempt = TestAttempt.get_by_id(attempt_id)
-    if not attempt or str(attempt["user_id"]) != current_user.id:
+    if not attempt:
+        flash("Test topilmadi", "error")
+        return redirect(url_for("tests.test_list"))
+    # Allow if logged in as owner, or if anonymous (bot code granted access)
+    if current_user.is_authenticated and str(attempt["user_id"]) != current_user.id:
         flash("Test topilmadi", "error")
         return redirect(url_for("tests.test_list"))
 
@@ -668,11 +694,14 @@ def take_test_all(attempt_id):
 
 
 @tests_bp.route("/take/<attempt_id>/all/submit", methods=["POST"])
-@login_required
 def submit_test_all(attempt_id):
-    """Collect all answers from the single-page form, grade, save."""
+    """Collect all answers from the single-page form, grade, save.
+    Access granted via bot code — no site login required."""
     attempt = TestAttempt.get_by_id(attempt_id)
-    if not attempt or str(attempt["user_id"]) != current_user.id:
+    if not attempt:
+        flash("Test topilmadi", "error")
+        return redirect(url_for("tests.test_list"))
+    if current_user.is_authenticated and str(attempt["user_id"]) != current_user.id:
         flash("Test topilmadi", "error")
         return redirect(url_for("tests.test_list"))
 
@@ -780,22 +809,24 @@ def submit_test_all(attempt_id):
         "completed_at": datetime.now(timezone.utc),
     })
     mongo.db.users.update_one(
-        {"_id": ObjectId(current_user.id)},
+        {"_id": ObjectId(attempt["user_id"])},
         {"$inc": {"test_count": 1}}
     )
 
     # ==== NOTIFY ADMIN with student result (Telegram) ====
     try:
-        _notify_admin_result(test, current_user, percentage, level, attempt_id)
+        tg_init = request.form.get("tg_init_data", "")
+        _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init)
     except Exception as e:
         print(f"Admin notify error: {e}")
 
     return redirect(url_for("tests.result", attempt_id=attempt_id))
 
 
-def _notify_admin_result(test, user, percentage, level, attempt_id):
+def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init=""):
     """Send student result to admin chat as a table via Telegram bot."""
     import requests as _req
+    import json as _json
     from app.extensions import mongo as _mongo
     from flask import current_app as _app
 
@@ -804,11 +835,31 @@ def _notify_admin_result(test, user, percentage, level, attempt_id):
     if not bot_token or not admin_chat:
         return
 
-    # Find telegram id / name
-    user_data = _mongo.db.users.find_one({"_id": ObjectId(user.id)})
-    tg_id = (user_data or {}).get("telegram_id", "")
-    tg_uname = (user_data or {}).get("telegram", "")
-    name = user.name or "?"
+    # Extract real student identity from Telegram initData (if present)
+    tg_id = ""
+    tg_uname = ""
+    name = "O'quvchi"
+    if tg_init:
+        try:
+            from urllib.parse import parse_qsl
+            pairs = dict(parse_qsl(tg_init, keep_blank_values=True))
+            if "user" in pairs:
+                u = _json.loads(pairs["user"])
+                tg_id = str(u.get("id", ""))
+                tg_uname = u.get("username", "")
+                first = u.get("first_name", "")
+                last = u.get("last_name", "")
+                name = (first + " " + last).strip() or "O'quvchi"
+        except Exception:
+            pass
+
+    # Fallback: from DB user (attempt owner)
+    if not tg_id:
+        user_data = _mongo.db.users.find_one({"_id": ObjectId(attempt["user_id"])})
+        tg_id = (user_data or {}).get("telegram_id", "")
+        tg_uname = (user_data or {}).get("telegram", "")
+        if user_data and user_data.get("name"):
+            name = user_data["name"]
 
     # Find access grant (which code opened this test)
     grant = _mongo.db.access_grants.find_one({"tg_id": str(tg_id)}) if tg_id else None

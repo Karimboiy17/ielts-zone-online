@@ -173,6 +173,7 @@ def telegram_login_link():
 
 
 @auth_bp.route("/telegram-webapp-login", methods=["POST"])
+@csrf.exempt
 def telegram_webapp_login():
     """Auto-login from Telegram Mini App via WebApp initData."""
     import json as _json

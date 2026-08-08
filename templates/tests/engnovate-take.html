@@ -221,6 +221,13 @@ body { background: var(--bg-secondary); }
     <div class="test-main" id="testMain">
       <form method="POST" action="{{ url_for('tests.submit_test_all', attempt_id=attempt._id|string) }}" id="testForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="tg_init_data" id="tgInitData" value="">
+        <script>
+          // Attach Telegram initData to the form on submit (for result identification)
+          if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.initData) {
+            document.getElementById('tgInitData').value = Telegram.WebApp.initData;
+          }
+        </script>
 
         {% for question in questions %}
         {% set qi = loop.index0 %}

@@ -12,21 +12,25 @@
 
 {% block scripts %}
 <script>
-// Auto-login via Telegram WebApp initData, then open the test directly
+// Auto-login via Telegram WebApp initData, then open the test directly.
+// Guard against redirect loops: only try once, then always open the test.
 (function() {
+    var tried = sessionStorage.getItem('tgAuthTried');
     function goToTest() {
-        location.href = '/m/{{ section }}/';
+        location.replace('/m/{{ section }}/');
     }
     if (window.Telegram && window.Telegram.WebApp) {
         try {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
-            if (Telegram.WebApp.initData) {
+            if (Telegram.WebApp.initData && !tried) {
+                sessionStorage.setItem('tgAuthTried', '1');
                 fetch('{{ url_for("auth.telegram_webapp_login") }}', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                     body: 'initData=' + encodeURIComponent(Telegram.WebApp.initData)
                 }).then(r => r.json()).then(d => {
+                    // login success or fail — always open the test
                     goToTest();
                 }).catch(() => { goToTest(); });
             } else {
