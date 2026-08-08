@@ -153,6 +153,27 @@ def _handle(app, update):
     state = mongo.db.bot_states.find_one({"tg_id": tg_id})
     cur_state = (state or {}).get("state", "")
 
+    # ==== RETake REQUEST: student sends reason → forward to admin ====
+    if cur_state == "awaiting_retake_reason":
+        reason = text.strip()
+        if len(reason) < 3:
+            _send(app, chat_id, "❌ Izoh juda qisqa. Sababni batafsilroq yozing.")
+            return
+        retake_section = (state or {}).get("retake_section", "")
+        retake_title = (state or {}).get("retake_title", "imtihon")
+        full_name = (state or {}).get("full_name", fname)
+        teacher_name = (state or {}).get("teacher_name", "")
+        _send_retake_request_to_admin(app, tg_id, full_name, uname,
+                                      teacher_name, retake_title, retake_section, reason)
+        # Reset state
+        mongo.db.bot_states.update_one({"tg_id": tg_id}, {"$set": {"state": "done"}})
+        _send(app, chat_id,
+            f"✅ So'rovingiz <b>adminga yuborildi</b>!\n\n"
+            f"📝 Izoh: {reason}\n"
+            f"📚 Imtihon: {retake_title}\n\n"
+            f"⏳ Admin tasdiqlagach, qayta ishlashingiz mumkin bo'ladi.")
+        return
+
     # ==== STEP 1: awaiting name ====
     if cur_state == "awaiting_name":
         full_name = text.strip()
@@ -201,13 +222,22 @@ def _handle(app, update):
         # ==== ANTI-DOUBLE-TAKE: check if student already took this test ====
         already = _student_already_took(app, tg_id, section)
         if already:
+            # Save which test they want to retake
+            mongo.db.bot_states.update_one(
+                {"tg_id": tg_id},
+                {"$set": {"retake_section": section, "retake_title": title,
+                          "updated_at": datetime.now(timezone.utc)}},
+                upsert=True,
+            )
             _send(app, chat_id,
                 f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon topshirgansiz</b>!\n\n"
-                f"📅 Sana: {already.get('completed_at', '—')}\n"
+                f"📅 Sana: {str(already.get('completed_at', '—'))[:16]}\n"
                 f"🎯 Ball: {already.get('score', '—')}%\n"
-                f"🏆 Daraja: {already.get('cefr_level', '—')}\n\n"
-                f"Har bir imtihon faqat <b>bir marta</b> topshiriladi. "
-                f"Keyingi darajaga o'tish uchun o'qituvchingizdan yangi kod oling.")
+                f"🏆 Daraja: {already.get('level', already.get('cefr_level', '—'))}\n\n"
+                f"Har bir imtihon faqat <b>bir marta</b> topshiriladi.\n"
+                f"Qayta ishlash uchun quyidagi tugmani bosing — so'rovingiz adminga yuboriladi.",
+                {"inline_keyboard": [[{"text": "🔁 Qayta ishlash so'rovi yuborish",
+                                       "callback_data": "retake_request"}]]})
             return
 
         site_url = app.config.get("SITE_URL", "")
@@ -240,6 +270,34 @@ def _handle(app, update):
     # ==== Any other text → menu ====
     _menu(app, chat_id, "Bosh menyu. Ro'yxatdan o'tish uchun <b>/start</b> bosing.")
     return
+
+
+def _send_retake_request_to_admin(app, tg_id, full_name, tg_uname, teacher_name,
+                                  test_title, section, reason):
+    """Forward a retake request to the admin chat."""
+    import requests as _req
+    admin_chat = app.config.get("ADMIN_CHAT_ID", "")
+    token = app.config.get("BOT_TOKEN", "")
+    if not admin_chat or not token:
+        return
+    text = (
+        f"🔁 <b>QAYTA ISHLASH SO'ROVI</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>O'quvchi:</b> {full_name}\n"
+        f"🆔 Telegram ID: {tg_id}\n"
+        f"📱 Telegram: @{tg_uname if tg_uname else '—'}\n"
+        f"📚 O'qituvchi: {teacher_name or '—'}\n"
+        f"📝 Imtihon: <b>{test_title}</b>\n"
+        f"🔑 Section: {section}\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"💬 <b>Izoh:</b> {reason}"
+    )
+    try:
+        _req.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                  json={"chat_id": admin_chat, "text": text, "parse_mode": "HTML"},
+                  timeout=10)
+    except Exception:
+        pass
 
 
 def _student_already_took(app, tg_id, section):
@@ -290,6 +348,22 @@ def _callback(app, cb):
     chat_id = cb["message"]["chat"]["id"]
     cid = cb["id"]
     _api(app, "answerCallbackQuery", {"callback_query_id": cid})
+
+    if data == "retake_request":
+        tg_id = str(cb.get("from", {}).get("id", ""))
+        from app.extensions import mongo
+        st = mongo.db.bot_states.find_one({"tg_id": tg_id})
+        title = (st or {}).get("retake_title", "imtihon")
+        mongo.db.bot_states.update_one(
+            {"tg_id": tg_id},
+            {"$set": {"state": "awaiting_retake_reason", "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        _send(app, chat_id,
+            f"🔁 <b>{title}</b> imtihonini qayta ishlash so'rovi.\n\n"
+            f"📝 Nega qayta ishlamoqchisiz? <b>Izoh yozing</b> — adminga yuboriladi.\n\n"
+            f"Masalan: <i>Internet uzilib qoldi, test tugamadi</i>")
+        return
 
     if data == "code":
         _send(app, chat_id,
