@@ -136,25 +136,25 @@
                 Telegram.WebApp.setBackgroundColor('#F8F6FC');
 
                 // Auto-login via WebApp initData (mini app only)
+                // IMPORTANT: only redirect FROM auth pages — never reload the
+                // current page (that would cause an infinite refresh loop).
                 if (Telegram.WebApp.initData && !document.body.dataset.tgLogged) {
-                    fetch('{{ url_for("auth.telegram_webapp_login") }}', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'initData=' + encodeURIComponent(Telegram.WebApp.initData)
-                    }).then(r => r.json()).then(d => {
-                        if (d.ok) {
-                            document.body.dataset.tgLogged = '1';
-                            // Redirect back to the intended page (test page) after login
-                            const isAuthPage = location.pathname.includes('/auth/');
-                            if (isAuthPage) {
+                    const isAuthPage = location.pathname.includes('/auth/');
+                    if (isAuthPage) {
+                        fetch('{{ url_for("auth.telegram_webapp_login") }}', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                            body: 'initData=' + encodeURIComponent(Telegram.WebApp.initData)
+                        }).then(r => r.json()).then(d => {
+                            if (d.ok) {
+                                document.body.dataset.tgLogged = '1';
+                                // Redirect back to the intended page (test page)
                                 const params = new URLSearchParams(location.search);
                                 const next = params.get('next');
                                 location.href = next || '{{ url_for("tests.test_list") }}';
-                            } else {
-                                location.reload();
                             }
-                        }
-                    }).catch(() => {});
+                        }).catch(() => {});
+                    }
                 }
             } catch (e) {}
         }
