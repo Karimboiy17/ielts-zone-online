@@ -144,10 +144,15 @@
                     }).then(r => r.json()).then(d => {
                         if (d.ok) {
                             document.body.dataset.tgLogged = '1';
-                            // Redirect to tests page if on a public page
+                            // Redirect back to the intended page (test page) after login
                             const isAuthPage = location.pathname.includes('/auth/');
-                            if (isAuthPage) location.href = '{{ url_for("tests.test_list") }}';
-                            else location.reload();
+                            if (isAuthPage) {
+                                const params = new URLSearchParams(location.search);
+                                const next = params.get('next');
+                                location.href = next || '{{ url_for("tests.test_list") }}';
+                            } else {
+                                location.reload();
+                            }
                         }
                     }).catch(() => {});
                 }

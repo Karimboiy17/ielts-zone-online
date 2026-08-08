@@ -195,6 +195,7 @@ def telegram_webapp_login():
     tg_username = tg_user.get("username", "")
     first_name = tg_user.get("first_name", "Student")
     last_name = tg_user.get("last_name", "")
+    full_name = (first_name + " " + last_name).strip()
 
     # Find or create user by telegram_id
     user = User.get_by_telegram_id(tg_id)
@@ -208,11 +209,17 @@ def telegram_webapp_login():
             counter += 1
         from werkzeug.security import generate_password_hash as gph
         import secrets as _secrets
-        user = User.create(first_name, email, gph(_secrets.token_hex(16)), f"@{tg_username}" if tg_username else "", username)
+        user = User.create(full_name, email, gph(_secrets.token_hex(16)), f"@{tg_username}" if tg_username else "", username)
         # Link telegram_id
         mongo.db.users.update_one(
             {"_id": __import__("bson.objectid", fromlist=["ObjectId"]).ObjectId(user.id)},
             {"$set": {"telegram_id": tg_id}}
+        )
+    else:
+        # Update name in case it changed (full name = first + last)
+        mongo.db.users.update_one(
+            {"_id": __import__("bson.objectid", fromlist=["ObjectId"]).ObjectId(user.id)},
+            {"$set": {"name": full_name, "telegram_id": tg_id}}
         )
 
     login_user(user, remember=True)
