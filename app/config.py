@@ -6,7 +6,8 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "ielts-zone-online-secret-2026")
-    MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/ielts_zone")
+    _mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGO_URL") or "mongodb://localhost:27017/ielts_zone"
+    MONGO_URI = _mongo_uri
     MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "ielts_zone")
     BOT_TOKEN = os.getenv("BOT_TOKEN", "")
     SITE_URL = os.getenv("SITE_URL", "http://localhost:5000")
