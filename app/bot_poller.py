@@ -274,7 +274,7 @@ def _handle(app, update):
 
 def _send_retake_request_to_admin(app, tg_id, full_name, tg_uname, teacher_name,
                                   test_title, section, reason):
-    """Forward a retake request to the admin chat."""
+    """Forward a retake request to all admin chats with Approve/Reject buttons."""
     import requests as _req
     admin_chat = app.config.get("ADMIN_CHAT_ID", "")
     token = app.config.get("BOT_TOKEN", "")
@@ -292,12 +292,22 @@ def _send_retake_request_to_admin(app, tg_id, full_name, tg_uname, teacher_name,
         f"━━━━━━━━━━━━━━━━\n"
         f"💬 <b>Izoh:</b> {reason}"
     )
-    try:
-        _req.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                  json={"chat_id": admin_chat, "text": text, "parse_mode": "HTML"},
-                  timeout=10)
-    except Exception:
-        pass
+    kb = {"inline_keyboard": [[
+        {"text": "✅ Tasdiqlash", "callback_data": f"retake_approve_{tg_id}_{section}"},
+        {"text": "❌ Rad etish", "callback_data": f"retake_reject_{tg_id}_{section}"},
+    ]]}
+    # Send to all admin chats (comma-separated)
+    admin_ids = app.config.get("ADMIN_CHAT_IDS") or [admin_chat]
+    for cid in admin_ids:
+        if not cid:
+            continue
+        try:
+            _req.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                      json={"chat_id": str(cid).strip(), "text": text,
+                            "parse_mode": "HTML", "reply_markup": kb},
+                      timeout=10)
+        except Exception:
+            pass
 
 
 def _student_already_took(app, tg_id, section):
@@ -350,6 +360,60 @@ def _callback(app, cb):
     chat_id = cb["message"]["chat"]["id"]
     cid = cb["id"]
     _api(app, "answerCallbackQuery", {"callback_query_id": cid})
+
+    # Admin approves/rejects retake request: retake_approve_<tg_id>_<section>
+    if data.startswith("retake_approve_") or data.startswith("retake_reject_"):
+        parts = data.split("_")
+        # format: retake, approve|reject, <tg_id>, <section>
+        if len(parts) >= 4:
+            action = parts[1]
+            student_tg_id = parts[2]
+            section = "_".join(parts[3:])
+            from app.extensions import mongo
+
+            # Find student info
+            student = mongo.db.students.find_one({"tg_id": student_tg_id})
+            sname = (student or {}).get("full_name", "O'quvchi")
+            test_title = mongo.db.tests.find_one({"section": section})
+            title = test_title["title"] if test_title else section
+
+            if action == "approve":
+                # Allow retake: remove locked attempts + completed record for this section
+                user = mongo.db.users.find_one({"telegram_id": student_tg_id})
+                if user:
+                    mongo.db.attempts.delete_many({
+                        "user_id": user["_id"],
+                        "section": section,
+                    })
+                if student and student.get("completed_tests"):
+                    mongo.db.students.update_one(
+                        {"tg_id": student_tg_id},
+                        {"$set": {"completed_tests": [
+                            t for t in student["completed_tests"] if t.get("section") != section
+                        ]}}
+                    )
+                # Reset bot state so the student can re-register
+                mongo.db.bot_states.update_one(
+                    {"tg_id": student_tg_id},
+                    {"$set": {"state": "done", "retake_approved": True,
+                              "retake_section": section, "updated_at": datetime.now(timezone.utc)}},
+                    upsert=True,
+                )
+                # Notify student
+                _send(app, student_tg_id,
+                    f"✅ <b>{title}</b> imtihonini qayta ishlashga <b>ruxsat berildi</b>!\n\n"
+                    f"📝 Kodni qayta yuboring — imtihon yangidan ochiladi.\n"
+                    f"Masalan, o'qituvchingiz bergan kodni yozing.")
+                # Reply to admin
+                _send(app, chat_id, f"✅ <b>{sname}</b> uchun <b>{title}</b> qayta ishlash tasdiqlandi!")
+            else:
+                # Notify student rejected
+                _send(app, student_tg_id,
+                    f"❌ <b>{title}</b> imtihonini qayta ishlash so'rovingiz <b>rad etildi</b>.\n\n"
+                    f"Batafsil ma'lumot uchun o'qituvchingizga murojaat qiling.")
+                # Reply to admin
+                _send(app, chat_id, f"❌ <b>{sname}</b> uchun <b>{title}</b> qayta ishlash rad etildi.")
+        return
 
     if data == "retake_request":
         tg_id = str(cb.get("from", {}).get("id", ""))
