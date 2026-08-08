@@ -768,4 +768,61 @@ def submit_test_all(attempt_id):
         {"_id": ObjectId(current_user.id)},
         {"$inc": {"test_count": 1}}
     )
+
+    # ==== NOTIFY ADMIN with student result (Telegram) ====
+    try:
+        _notify_admin_result(test, current_user, percentage, level, attempt_id)
+    except Exception as e:
+        print(f"Admin notify error: {e}")
+
     return redirect(url_for("tests.result", attempt_id=attempt_id))
+
+
+def _notify_admin_result(test, user, percentage, level, attempt_id):
+    """Send student result to admin chat as a table via Telegram bot."""
+    import requests as _req
+    from app.extensions import mongo as _mongo
+    from flask import current_app as _app
+
+    bot_token = _app.config.get("BOT_TOKEN", "")
+    admin_chat = _app.config.get("ADMIN_CHAT_ID", "")
+    if not bot_token or not admin_chat:
+        return
+
+    # Find telegram id / name
+    user_data = _mongo.db.users.find_one({"_id": ObjectId(user.id)})
+    tg_id = (user_data or {}).get("telegram_id", "")
+    tg_uname = (user_data or {}).get("telegram", "")
+    name = user.name or "?"
+
+    # Find access grant (which code opened this test)
+    grant = _mongo.db.access_grants.find_one({"tg_id": str(tg_id)}) if tg_id else None
+
+    # Compute correct/total
+    attempt = TestAttempt.get_by_id(attempt_id)
+    correct = 0
+    total_q = 0
+    for a in attempt.get("answers", []):
+        total_q += 1
+        if a.get("correct"):
+            correct += 1
+
+    text = (
+        f"📊 <b>IMTIHON NATIJASI</b>\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"👤 <b>Ism familiya:</b> {name}\n"
+        f"🆔 Telegram ID: {tg_id or '—'}\n"
+        f"📱 Telegram: {tg_uname or '—'}\n"
+        f"📝 <b>Imtihon:</b> {test.get('title', '?')}\n"
+        f"🔑 Kod: {grant.get('code', '—') if grant else '—'}\n"
+        f"━━━━━━━━━━━━━━━━\n"
+        f"✅ To'g'ri javoblar: {correct}/{total_q}\n"
+        f"🎯 Ball: {percentage}%\n"
+        f"🏆 Daraja: <b>{level['level']} — {level['label']}</b>\n"
+        f"🕒 Vaqt: {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M')}"
+    )
+    _req.post(
+        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+        json={"chat_id": admin_chat, "text": text, "parse_mode": "HTML"},
+        timeout=10,
+    )

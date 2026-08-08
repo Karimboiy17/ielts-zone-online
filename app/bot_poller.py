@@ -7,6 +7,34 @@ from datetime import datetime, timezone, timedelta
 logger = logging.getLogger(__name__)
 _ACTIVE = True
 
+# Default access codes: teacher gives these to students
+# Format: {"zoneb1+mid": "b1plus_mid", ...}  (code -> test section)
+DEFAULT_ACCESS_CODES = {
+    "zoneb1+mid": "b1plus_mid",
+    "zoneb1+end": "b1plus_end",
+    "zonea1+mid": "a1_mid",
+    "zonea1+end": "a1_end",
+    "zonea2+mid": "a2_mid",
+    "zonea2+end": "a2_end",
+    "zoneb1mid": "b1_mid",
+    "zoneb1end": "b1_end",
+    "zonenovice+mid": "novice_mid",
+    "zonenovice+end": "novice_end",
+}
+
+def current_app_access_codes(app):
+    """Load access codes — from DB (admin-managed) merged with defaults."""
+    try:
+        from app.extensions import mongo
+        doc = mongo.db.settings.find_one({"key": "access_codes"})
+        if doc and doc.get("codes"):
+            codes = dict(DEFAULT_ACCESS_CODES)
+            codes.update(doc["codes"])
+            return codes
+    except Exception:
+        pass
+    return dict(DEFAULT_ACCESS_CODES)
+
 def _main_menu(site_url=""):
     return {"inline_keyboard": [
         [{"text": "📝 Imtihonni boshlash", "web_app": {"url": site_url}}],
@@ -103,50 +131,39 @@ def _handle(app, update):
     # Handle text — payment code or test ID
     from app.extensions import mongo
     state = mongo.db.bot_states.find_one({"tg_id": tg_id})
-    
-    if state and state.get("state") == "awaiting_test_id":
-        # User sent a payment code or test ID
-        from bson.objectid import ObjectId
-        user_input = text.strip()
-        attempt = None
-        
-        # Try as payment code (6-digit number)
-        if user_input.isdigit() and len(user_input) == 6:
-            attempt = mongo.db.attempts.find_one({"payment_code": user_input})
-        
-        # Try as ObjectId
-        if not attempt:
-            try:
-                attempt = mongo.db.attempts.find_one({"_id": ObjectId(user_input)})
-            except:
-                pass
-        
-        if not attempt:
-            _send(app, chat_id, "❌ To'lov kodi topilmadi. Saytdagi 6 xonali kodni yozib yuboring.")
+
+    # ==== ACCESS CODE FLOW (teacher gives code like zoneb1+mid) ====
+    access_codes = current_app_access_codes(app)
+    code_key = text.strip().lower().replace(" ", "")
+    if code_key in access_codes:
+        section = access_codes[code_key]
+        test = mongo.db.tests.find_one({"section": section, "active": True})
+        if not test:
+            _send(app, chat_id, "❌ Bu kod uchun test topilmadi. O'qituvchingizga murojaat qiling.")
             return
-        test = mongo.db.tests.find_one({"_id": attempt.get("test_id")})
-        title = test["title"] if test else attempt.get("section", "?")
-        price = test["price"] if test else 0
-        
-        # Save context
-        mongo.db.payment_context.update_one(
+        title = test.get("title", section)
+        site_url = app.config.get("SITE_URL", "")
+        # Remember which test this user opened with this code
+        mongo.db.access_grants.update_one(
             {"tg_id": tg_id},
-            {"$set": {"attempt_id": str(attempt["_id"]), "test_title": title, "price": price, "updated_at": datetime.now(timezone.utc)}},
+            {"$set": {"code": code_key, "section": section, "test_title": title,
+                      "tg_username": uname, "tg_name": fname,
+                      "granted_at": datetime.now(timezone.utc)}},
             upsert=True,
         )
-        mongo.db.bot_states.update_one({"tg_id": tg_id}, {"$set": {"state": "awaiting_receipt"}})
-        
         _send(app, chat_id,
-            f"💳 <b>{title}</b>\n\n"
-            f"To'lov summasi: <b>{price} so'm</b>\n\n"
-            f"📌 Quyidagi karta/ hisob raqamiga pul o'tkazing:\n"
-            f"💳 8600 1234 5678 9012\n"
-            f"🏦 Alisher aka\n\n"
-            f"To'lovni amalga oshirgach, <b>chek rasmini</b> shu botga yuboring.\n\n"
-            f"✅ Admin tasdiqlagach test ochiladi.")
+            f"✅ <b>{title}</b> imtihoni ochildi!\n\n"
+            f"📝 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
+            f"⏱️ Vaqt: {test.get('time_limit', 70)} daqiqa\n"
+            f"❓ Savollar: {len(test.get('questions', []))} qism\n\n"
+            f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
+            {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
+                                   "web_app": {"url": f"{site_url}/tests/{section}/"}}]]})
         return
 
-    # Any other text → menu
+    # ==== Any other text → menu ====
+    _menu(app, chat_id, "Bosh menyu. Kod yuborish uchun o'qituvchingizdan olingan kodni yozing, masalan: <code>zoneb1+mid</code>")
+    return
 
 def _callback(app, cb):
     data = cb.get("data", "")
