@@ -823,6 +823,13 @@ def submit_test_all(attempt_id):
         {"$inc": {"test_count": 1}}
     )
 
+    # ==== SAVE RESULT to MongoDB: link attempt to student (anti-double-take) ====
+    try:
+        tg_init = request.form.get("tg_init_data", "")
+        _save_result_to_db(test, attempt, percentage, level, attempt_id, tg_init)
+    except Exception as e:
+        print(f"Save result error: {e}")
+
     # ==== NOTIFY ADMIN with student result (Telegram) ====
     try:
         tg_init = request.form.get("tg_init_data", "")
@@ -835,6 +842,82 @@ def submit_test_all(attempt_id):
                          score=percentage,
                          level=level["level"],
                          label=level["label"])
+
+
+def _save_result_to_db(test, attempt, percentage, level, attempt_id, tg_init=""):
+    """Record completed attempt against the student (tg_id) in MongoDB so a
+    level test can only be taken once per student."""
+    import json as _json
+    from app.extensions import mongo as _mongo
+    from urllib.parse import parse_qsl
+
+    tg_id = ""
+    tg_uname = ""
+    full_name = ""
+    if tg_init:
+        try:
+            pairs = dict(parse_qsl(tg_init, keep_blank_values=True))
+            if "user" in pairs:
+                u = _json.loads(pairs["user"])
+                tg_id = str(u.get("id", ""))
+                tg_uname = u.get("username", "")
+                first = u.get("first_name", "")
+                last = u.get("last_name", "")
+                full_name = (first + " " + last).strip()
+        except Exception:
+            pass
+
+    if not tg_id:
+        return
+
+    # Ensure a real user exists for this tg_id (not the shared guest)
+    from app.models import User
+    user = User.get_by_telegram_id(tg_id)
+    if not user:
+        import secrets
+        from werkzeug.security import generate_password_hash as gph
+        email = f"tg{tg_id}@telegram.local"
+        username = f"tg_{tg_id}"
+        base = username
+        counter = 1
+        while User.get_by_username(username):
+            username = f"{base}{counter}"
+            counter += 1
+        user = User.create(full_name or "O'quvchi", email, gph(secrets.token_hex(16)),
+                           f"@{tg_uname}" if tg_uname else "", username)
+        _mongo.db.users.update_one(
+            {"_id": ObjectId(user.id)},
+            {"$set": {"telegram_id": tg_id}}
+        )
+
+    # Link attempt to this real user + mark completed (anti-double-take key)
+    _mongo.db.attempts.update_one(
+        {"_id": ObjectId(attempt_id)},
+        {"$set": {"user_id": ObjectId(user.id)}}
+    )
+
+    # Store student completion record
+    _mongo.db.students.update_one(
+        {"tg_id": str(tg_id)},
+        {"$set": {
+            "full_name": full_name or "O'quvchi",
+            "tg_username": tg_uname,
+            "last_test": test.get("title", "?"),
+            "last_section": attempt.get("section", ""),
+            "last_score": percentage,
+            "last_level": level["level"],
+            "updated_at": datetime.now(timezone.utc),
+        }, "$push": {
+            "completed_tests": {
+                "section": attempt.get("section", ""),
+                "test_title": test.get("title", "?"),
+                "score": percentage,
+                "level": level["level"],
+                "completed_at": datetime.now(timezone.utc),
+            }
+        }},
+        upsert=True,
+    )
 
 
 def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init=""):

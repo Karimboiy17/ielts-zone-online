@@ -197,6 +197,19 @@ def _handle(app, update):
             _send(app, chat_id, "❌ Bu kod uchun test topilmadi. O'qituvchingizga murojaat qiling.")
             return
         title = test.get("title", section)
+
+        # ==== ANTI-DOUBLE-TAKE: check if student already took this test ====
+        already = _student_already_took(app, tg_id, section)
+        if already:
+            _send(app, chat_id,
+                f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon topshirgansiz</b>!\n\n"
+                f"📅 Sana: {already.get('completed_at', '—')}\n"
+                f"🎯 Ball: {already.get('score', '—')}%\n"
+                f"🏆 Daraja: {already.get('cefr_level', '—')}\n\n"
+                f"Har bir imtihon faqat <b>bir marta</b> topshiriladi. "
+                f"Keyingi darajaga o'tish uchun o'qituvchingizdan yangi kod oling.")
+            return
+
         site_url = app.config.get("SITE_URL", "")
         full_name = (state or {}).get("full_name", fname)
         teacher_name = (state or {}).get("teacher_name", "")
@@ -227,6 +240,31 @@ def _handle(app, update):
     # ==== Any other text → menu ====
     _menu(app, chat_id, "Bosh menyu. Ro'yxatdan o'tish uchun <b>/start</b> bosing.")
     return
+
+
+def _student_already_took(app, tg_id, section):
+    """Check if this Telegram user already completed this test section."""
+    try:
+        from app.extensions import mongo
+        # 1) Check completed_tests array on the student doc (authoritative)
+        student = mongo.db.students.find_one({"tg_id": str(tg_id)})
+        if student and student.get("completed_tests"):
+            for t in student["completed_tests"]:
+                if t.get("section") == section:
+                    return t
+        # 2) Fallback: check attempts owned by this user
+        user = mongo.db.users.find_one({"telegram_id": str(tg_id)})
+        if user:
+            attempt = mongo.db.attempts.find_one({
+                "user_id": user["_id"],
+                "section": section,
+                "status": "completed",
+            })
+            if attempt:
+                return attempt
+        return None
+    except Exception:
+        return None
 
 
 def _save_student_profile(app, tg_id, full_name, teacher_name, code_key, section):
