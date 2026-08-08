@@ -144,6 +144,14 @@ def _handle(app, update):
             f"Masalan: <code>Aziz Karimov</code>")
         return
 
+    # ==== ADMIN COMMANDS ====
+    if text.strip().lower() in ("/results", "natijalar", "/natijalar"):
+        if _is_admin(app, tg_id):
+            _send_all_results(app, chat_id)
+        else:
+            _send(app, chat_id, "❌ Bu buyruq faqat adminlar uchun.")
+        return
+
     if msg.get("photo"):
         _handle_payment_receipt(app, chat_id, tg_id, fname, msg)
         return
@@ -270,6 +278,45 @@ def _handle(app, update):
     # ==== Any other text → menu ====
     _menu(app, chat_id, "Bosh menyu. Ro'yxatdan o'tish uchun <b>/start</b> bosing.")
     return
+
+
+def _is_admin(app, tg_id):
+    """Check if a Telegram ID is an admin."""
+    admin_chat = app.config.get("ADMIN_CHAT_ID", "")
+    admin_ids = app.config.get("ADMIN_CHAT_IDS") or [admin_chat]
+    return str(tg_id) in [str(x).strip() for x in admin_ids]
+
+
+def _send_all_results(app, chat_id):
+    """Send a summary of all completed test results to the requester."""
+    try:
+        from app.extensions import mongo
+        attempts = list(mongo.db.attempts.find(
+            {"status": "completed"}
+        ).sort("completed_at", -1).limit(50))
+
+        if not attempts:
+            _send(app, chat_id, "📭 Hali hech kim test topshirmagan.")
+            return
+
+        text = "📊 <b>BARCHA NATIJALAR</b>\n━━━━━━━━━━━━━━━━\n"
+        for a in attempts:
+            user = mongo.db.users.find_one({"_id": a.get("user_id")})
+            name = (user or {}).get("name", "?")
+            tg = (user or {}).get("telegram_id", "?")
+            test = mongo.db.tests.find_one({"_id": a.get("test_id")})
+            title = test["title"] if test else a.get("section", "?")
+            score = a.get("score", "?")
+            level = a.get("cefr_level", "?")
+            text += (f"👤 {name} (ID:{tg})\n"
+                     f"   📝 {title} | 🎯 {score}% | 🏆 {level}\n")
+
+        # Telegram message limit 4096 — split if needed
+        if len(text) > 3900:
+            text = text[:3900] + "\n..."
+        _send(app, chat_id, text)
+    except Exception as e:
+        _send(app, chat_id, f"❌ Natijalarni olishda xato: {e}")
 
 
 def _send_retake_request_to_admin(app, tg_id, full_name, tg_uname, teacher_name,

@@ -6,6 +6,8 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "ielts-zone-online-secret-2026")
+    # Long exam sessions (~1.5h) — CSRF token must not expire mid-test
+    WTF_CSRF_TIME_LIMIT = None
     _mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGO_URL") or "mongodb://localhost:27017/ielts_zone"
     MONGO_URI = _mongo_uri
     MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "ielts_zone")
