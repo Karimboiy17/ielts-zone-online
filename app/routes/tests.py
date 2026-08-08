@@ -703,6 +703,28 @@ def take_test_all(attempt_id):
                          time_left=time_left)
 
 
+def _gap_answer_ok(user_val, correct_val):
+    """Check gap-fill answer — accepts either variant when the key has
+    parenthesised alternative, e.g. '(COMPANY) RESTAURANT' matches both
+    'company restaurant' and 'restaurant' (parenthesised word optional)."""
+    import re
+    u = str(user_val or "").strip().lower()
+    c = str(correct_val or "").strip().lower()
+
+    # Direct match
+    if u == c:
+        return True
+
+    # Parenthesised alternative: "(word) rest" → both "word rest" and "rest" accepted
+    m = re.match(r"^\s*\(([^)]+)\)\s*(.*)$", c)
+    if m:
+        opt_word, rest = m.group(1), m.group(2)
+        variants = [f"{opt_word} {rest}".strip(), rest.strip()]
+        return u in variants or u == opt_word
+
+    return False
+
+
 @tests_bp.route("/take/<attempt_id>/all/submit", methods=["POST"])
 def submit_test_all(attempt_id):
     """Collect all answers from the single-page form, grade, save.
@@ -740,7 +762,7 @@ def submit_test_all(attempt_id):
             if user_answer:
                 correct_items = q.get("gap_items", [])
                 match = sum(1 for i, w in enumerate(correct_items)
-                            if i < len(parts) and parts[i].strip().lower() == w.lower())
+                            if i < len(parts) and _gap_answer_ok(parts[i], w))
                 correct = match == len(correct_items) if correct_items else False
 
         elif qtype == "writing":
@@ -931,8 +953,6 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
     admin_chat = _app.config.get("ADMIN_CHAT_ID", "")
     if not bot_token or not admin_chat:
         return
-
-    # Extract real student identity from Telegram initData (if present)
     tg_id = ""
     tg_uname = ""
     name = "O'quvchi"
@@ -1012,11 +1032,20 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
         # Cap writing text at 2000 chars (Telegram limit)
         capped = writing_text if len(writing_text) <= 2000 else writing_text[:1997] + "..."
         text += f"\n\n━━━━━━━━━━━━━━━━\n✍️ <b>WRITING JAVOBI:</b>\n<i>{capped}</i>"
-    _req.post(
-        f"https://api.telegram.org/bot{bot_token}/sendMessage",
-        json={"chat_id": admin_chat, "text": text, "parse_mode": "HTML"},
-        timeout=10,
-    )
+
+    # Send to ALL admin chats (comma-separated)
+    admin_ids = _app.config.get("ADMIN_CHAT_IDS") or [admin_chat]
+    for cid in admin_ids:
+        if not cid:
+            continue
+        try:
+            _req.post(
+                f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                json={"chat_id": str(cid).strip(), "text": text, "parse_mode": "HTML"},
+                timeout=10,
+            )
+        except Exception:
+            pass
 
 
 def _build_section_breakdown(test, attempt):

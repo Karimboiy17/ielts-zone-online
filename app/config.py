@@ -18,8 +18,10 @@ class Config:
     TELEGRAM_BOT = "@ieltszonemidtestbot"
     TELEGRAM_BOT_URL = "https://t.me/ieltszonemidtestbot"
 
-    # Admin Telegram chat ID (for payment notifications)
+    # Admin Telegram chat ID (for payment notifications) — can be comma-separated
     ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", os.getenv("ADMIN_TELEGRAM_ID", ""))
+    # All admin chat IDs (Karimboy + Fathulloh coordinator)
+    ADMIN_CHAT_IDS = [cid.strip() for cid in ADMIN_CHAT_ID.split(",") if cid.strip()]
 
     # Admin credentials (dev default)
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")

@@ -301,7 +301,9 @@ def _send_retake_request_to_admin(app, tg_id, full_name, tg_uname, teacher_name,
 
 
 def _student_already_took(app, tg_id, section):
-    """Check if this Telegram user already completed this test section."""
+    """Check if this Telegram user already started/completed this test section.
+    ANY started attempt blocks retake — closing the test without finishing
+    still locks it (no double-take)."""
     try:
         from app.extensions import mongo
         # 1) Check completed_tests array on the student doc (authoritative)
@@ -310,13 +312,13 @@ def _student_already_took(app, tg_id, section):
             for t in student["completed_tests"]:
                 if t.get("section") == section:
                     return t
-        # 2) Fallback: check attempts owned by this user
+        # 2) Fallback: check attempts owned by this user (started OR completed)
         user = mongo.db.users.find_one({"telegram_id": str(tg_id)})
         if user:
             attempt = mongo.db.attempts.find_one({
                 "user_id": user["_id"],
                 "section": section,
-                "status": "completed",
+                "status": {"$in": ["started", "completed"]},
             })
             if attempt:
                 return attempt
