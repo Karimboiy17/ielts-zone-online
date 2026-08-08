@@ -95,15 +95,11 @@ def _seed_data(app):
     # Admin panel orqali qo'lda yaratiladi. DEFAULT_TESTS faqat kod ichida namuna.
     print("  ✓ Test seeding skipped — admin panel orqali yarating")
 
-    # Auto-seed B1+ MID test if missing (deployed on Railway)
+    # Auto-seed B1+ MID test (always refresh content from code)
     try:
-        existing = mongo.db.tests.count_documents({"section": "b1plus_mid"})
-        if existing == 0:
-            from app.seed_b1plus import seed_b1plus_mid
-            seed_b1plus_mid(mongo.db)
-            print("  ✓ B1+ MID test auto-seeded")
-        else:
-            print("  ✓ B1+ MID test already exists")
+        from app.seed_b1plus import seed_b1plus_mid
+        n = seed_b1plus_mid(mongo.db)
+        print(f"  ✓ B1+ MID test seeded ({n} questions)")
     except Exception as e:
         print(f"  ⚠ Auto-seed skipped: {e}")
 
