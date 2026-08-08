@@ -575,11 +575,11 @@ function nextStep() {
   if (currentStep === 0) {
     // Audio hali tugamagan bo'lsa — ogohlantirib so'raymiz
     if (!listeningStarted) {
-      if (!confirm('⚠️ Audio hali eshitilmagan!\n\nListening savollariga javob berish uchun avval audioni eshiting.\nBaribir Readingga o'tasizmi?')) {
+      if (!confirm("⚠️ Audio hali eshitilmagan!\n\nListening savollariga javob berish uchun avval audioni eshiting.\nBaribir Readingga o'tasizmi?")) {
         return;
       }
     } else if (!listeningEnded) {
-      if (!confirm('⚠️ Audio hali tugamagan!\n\nReadingga o'tsangiz, listening qismiga qaytib bo'lmaydi.\nBaribir davom etasizmi?')) {
+      if (!confirm("⚠️ Audio hali tugamagan!\n\nReadingga o'tsangiz, listening qismiga qaytib bo'lmaydi.\nBaribir davom etasizmi?")) {
         return;
       }
     }
