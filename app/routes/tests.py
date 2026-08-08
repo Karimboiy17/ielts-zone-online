@@ -664,8 +664,10 @@ def take_test_all(attempt_id):
 
     test = TestModel.get_by_id(attempt["test_id"])
     if not test:
-        flash("Test topilmadi (o'chirilgan bo'lishi mumkin)", "error")
-        return redirect(url_for("tests.test_list"))
+        # Stale attempt (test was re-seeded) — delete it and start fresh
+        mongo.db.attempts.delete_one({"_id": ObjectId(attempt_id)})
+        section = attempt.get("section", "b1plus_mid")
+        return redirect(url_for("tests.mini_test", section=section))
 
     questions = test.get("questions", [])
     audio_parts = test.get("audio_parts", [])

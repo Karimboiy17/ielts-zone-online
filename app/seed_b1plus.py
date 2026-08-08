@@ -213,7 +213,7 @@ WRITING_QUESTIONS = [
 
 
 def seed_b1plus_mid(db):
-    """Insert or replace the B1+ MID test document."""
+    """Insert or update the B1+ MID test document (keeps _id stable so old attempts work)."""
     test = {
         "section": "b1plus_mid",
         "title": "B1+ · MID",
@@ -227,6 +227,10 @@ def seed_b1plus_mid(db):
         "created_at": datetime.now(timezone.utc),
         "questions": LISTENING_QUESTIONS + READING_QUESTIONS + WRITING_QUESTIONS,
     }
-    db.tests.delete_many({"section": "b1plus_mid"})
-    db.tests.insert_one(test)
+    # Upsert: keep the existing _id so old attempts still reference a valid test
+    db.tests.update_one(
+        {"section": "b1plus_mid"},
+        {"$set": test},
+        upsert=True,
+    )
     return len(test["questions"])
