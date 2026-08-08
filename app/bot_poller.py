@@ -154,7 +154,7 @@ def _handle(app, update):
         _send(app, chat_id,
             f"✅ O'qituvchi: <b>{teacher}</b> — saqlandi!\n\n"
             f"3️⃣ Endi <b>o'qituvchingiz bergan kodni</b> yozing.\n\n"
-            f"🔑 Masalan: <code>zoneb1+mid</code>")
+            f"🔑 Kodni o'qituvchingizdan oling — u sizga maxsus kod beradi.")
         return
 
     # ==== STEP 3: awaiting code ====
@@ -162,8 +162,7 @@ def _handle(app, update):
         access_codes = current_app_access_codes(app)
         code_key = text.strip().lower().replace(" ", "")
         if code_key not in access_codes:
-            _send(app, chat_id, "❌ Kod noto'g'ri. O'qituvchingizdan to'g'ri kodni so'rang.\n\n"
-                                f"Masalan: <code>zoneb1+mid</code>")
+            _send(app, chat_id, "❌ Kod noto'g'ri. O'qituvchingizdan to'g'ri kodni so'rang.")
             return
         section = access_codes[code_key]
         test = mongo.db.tests.find_one({"section": section, "active": True})
