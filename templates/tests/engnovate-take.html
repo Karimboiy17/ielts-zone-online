@@ -556,24 +556,46 @@ function selectOpt(label) {
 // Init: start at listening step
 showStep(0);
 
-// Audio: only ONE play allowed
+// Audio: plays ONCE (no rewind, no restart after finish), but pause/resume allowed
 document.addEventListener('DOMContentLoaded', function() {
   var audios = document.querySelectorAll('.audio-player audio');
   audios.forEach(function(a) {
+    var audioEnded = false;
+    var lastTime = 0;
+
+    // Block seeking BACKWARD (rewind). Forward seeking is also disabled for simplicity.
+    a.addEventListener('seeking', function() {
+      // If user tries to go back before where they've been, force forward to lastTime
+      if (this.currentTime < lastTime) {
+        this.currentTime = lastTime;
+      }
+    });
+
+    a.addEventListener('timeupdate', function() {
+      if (this.currentTime > lastTime) lastTime = this.currentTime;
+    });
+
+    // Allow play always EXCEPT after the audio has fully ended (no restart)
     a.addEventListener('play', function() {
-      if (audioPlayed) {
+      if (audioEnded) {
         this.pause();
-        alert('⚠️ Audio faqat bir marta eshitiladi!');
+        this.currentTime = this.duration; // stay at end
+        alert('⚠️ Audio tugadi — qayta eshitib bo\'lmaydi!');
         return;
       }
-      audioPlayed = true;
-      // Mark the button so the student knows audio was played
-      var label = document.querySelector('.audio-label');
-      if (label) label.textContent = '🔊 Audio eshitildi';
+      // First real play: mark it
+      if (!this.dataset.started) {
+        this.dataset.started = '1';
+        var label = document.querySelector('.audio-label');
+        if (label) label.textContent = '🔊 Audio eshitilmoqda...';
+      }
     });
-    // Disable seeking? Keep simple: just block replay after first play
+
+    // When audio finishes — no restart allowed
     a.addEventListener('ended', function() {
-      // audio finished — it can't be replayed (blocked by play handler)
+      audioEnded = true;
+      var label = document.querySelector('.audio-label');
+      if (label) label.textContent = '🔊 Audio eshitildi ✓';
     });
   });
 });
