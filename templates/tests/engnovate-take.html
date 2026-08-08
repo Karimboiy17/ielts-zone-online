@@ -636,17 +636,22 @@ function nextStep() {
     return;
   }
   if (currentStep === 0) {
-    // Audio hali tugamagan bo'lsa — ogohlantirib so'raymiz
+    // Audio hali tugamagan bo'lsa — ogohlantirib so'raymiz (Telegram-safe confirm)
     if (!listeningStarted) {
-      if (!confirm("⚠️ Audio hali eshitilmagan!\n\nListening savollariga javob berish uchun avval audioni eshiting.\nBaribir Readingga o'tasizmi?")) {
-        return;
-      }
+      askConfirm(
+        "⚠️ Audio hali eshitilmagan!",
+        "Listening savollariga javob berish uchun avval audioni eshiting.\nBaribir Readingga o'tasizmi?",
+        function() { showStep(1); }
+      );
     } else if (!listeningEnded) {
-      if (!confirm("⚠️ Audio hali tugamagan!\n\nReadingga o'tsangiz, listening qismiga qaytib bo'lmaydi.\nBaribir davom etasizmi?")) {
-        return;
-      }
+      askConfirm(
+        "⚠️ Audio hali tugamagan!",
+        "Readingga o'tsangiz, listening qismiga qaytib bo'lmaydi.\nBaribir davom etasizmi?",
+        function() { showStep(1); }
+      );
+    } else {
+      showStep(1);
     }
-    showStep(1);
   } else if (currentStep === 1) {
     showStep(2);
   } else {
@@ -654,7 +659,28 @@ function nextStep() {
   }
 }
 
+function askConfirm(title, message, onYes) {
+  // Telegram WebApp popup is the reliable way inside the mini app
+  if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.showConfirm) {
+    Telegram.WebApp.showConfirm(message, function(ok) {
+      if (ok) onYes();
+    });
+    return;
+  }
+  // Fallback for plain browser
+  if (window.confirm(title + "\n\n" + message)) {
+    onYes();
+  }
+}
+
 function submitForm() {
+  // Telegram-safe confirm
+  if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.showConfirm) {
+    Telegram.WebApp.showConfirm("Testni yakunlashni tasdiqlaysizmi?", function(ok) {
+      if (ok) document.getElementById('testForm').submit();
+    });
+    return;
+  }
   if (confirm('Testni yakunlashni tasdiqlaysizmi?')) {
     document.getElementById('testForm').submit();
   }
