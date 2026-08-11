@@ -751,26 +751,53 @@ def submit_test_all(attempt_id):
     for qi, q in enumerate(questions):
         qid = q["id"]
         qtype = q.get("type")
-        user_answer = None
-        correct = False
+        qsection = q.get("section", "?")
+        start = q.get("start_num", 1)
 
+        # ============ GAP-FILL: each gap = 1 question ============
         if qtype == "writing" and q.get("gap_items"):
             parts = []
             for gi in range(len(q.get("gap_items", []))):
                 val = request.form.get(f"q{qi}_g{gi}", "").strip()
                 parts.append(val)
-            user_answer = ",".join(parts) if any(parts) else None
-            if user_answer:
-                correct_items = q.get("gap_items", [])
-                match = sum(1 for i, w in enumerate(correct_items)
-                            if i < len(parts) and _gap_answer_ok(parts[i], w))
-                correct = match == len(correct_items) if correct_items else False
+            for gi, gap in enumerate(q.get("gap_items", [])):
+                num = start + gi
+                ua = parts[gi].strip() if gi < len(parts) else ""
+                ok = _gap_answer_ok(ua, gap)
+                total += 1
+                if ok:
+                    earned += 1
+                answers.append({
+                    "question_id": f"{qid}_{gi}",
+                    "section": qsection,
+                    "question_num": num,
+                    "user_answer": ua or None,
+                    "correct": ok,
+                    "correct_answer": gap,
+                    "points_earned": 1 if ok else 0,
+                    "points_possible": 1,
+                    "answered": bool(ua),
+                })
+            continue
 
-        elif qtype == "writing":
+        # ============ WRITING (free text): teacher review ============
+        if qtype == "writing":
             user_answer = request.form.get(f"q{qi}_answer", "").strip() or None
-            correct = False  # teacher review
+            answers.append({
+                "question_id": qid,
+                "section": qsection,
+                "question_num": start,
+                "user_answer": user_answer,
+                "correct": False,  # teacher review
+                "correct_answer": None,
+                "points_earned": 0,
+                "points_possible": 1,
+                "answered": user_answer is not None,
+            })
+            continue
 
-        elif qtype == "multiple_group":
+        # ============ MULTIPLE GROUP: each item = 1 question ============
+        if qtype == "multiple_group":
             group = {}
             for ii in range(len(q.get("items", []))):
                 val = request.form.get(f"q{qi}_i{ii}")
@@ -779,15 +806,33 @@ def submit_test_all(attempt_id):
                         group[str(ii)] = int(val)
                     except (ValueError, TypeError):
                         group[str(ii)] = None
-            user_answer = group if group else None
-            if user_answer:
-                items = q.get("items", [])
-                match = sum(1 for i, item in enumerate(items)
-                            if str(i) in user_answer and user_answer[str(i)] is not None
-                            and int(user_answer[str(i)]) == int(item.get("answer")))
-                correct = match == len(items) if items else False
+            items = q.get("items", [])
+            for ii, item in enumerate(items):
+                num = start + ii
+                ok = False
+                sel = None
+                key = str(ii)
+                if key in group and group[key] is not None:
+                    sel = group[key]
+                    ok = int(group[key]) == int(item.get("answer"))
+                total += 1
+                if ok:
+                    earned += 1
+                answers.append({
+                    "question_id": f"{qid}_{ii}",
+                    "section": qsection,
+                    "question_num": num,
+                    "user_answer": sel,
+                    "correct": ok,
+                    "correct_answer": item.get("answer"),
+                    "points_earned": 1 if ok else 0,
+                    "points_possible": 1,
+                    "answered": sel is not None,
+                })
+            continue
 
-        elif qtype == "matching":
+        # ============ MATCHING: each match = 1 question ============
+        if qtype == "matching":
             match_map = {}
             for oi in range(len(q.get("options", []))):
                 val = request.form.get(f"q{qi}_o{oi}")
@@ -796,34 +841,53 @@ def submit_test_all(attempt_id):
                         match_map[str(oi)] = int(val)
                     except (ValueError, TypeError):
                         match_map[str(oi)] = None
-            user_answer = match_map if match_map else None
-            if user_answer:
-                correct_ans = q.get("answer", [])
-                match = sum(1 for oi, expected in enumerate(correct_ans)
-                            if str(oi) in user_answer and user_answer[str(oi)] is not None
-                            and int(user_answer[str(oi)]) == int(expected))
-                correct = match == len(correct_ans) if correct_ans else False
+            correct_ans = q.get("answer", [])
+            for oi, expected in enumerate(correct_ans):
+                num = start + oi
+                ok = False
+                sel = None
+                key = str(oi)
+                if key in match_map and match_map[key] is not None:
+                    sel = match_map[key]
+                    ok = int(match_map[key]) == int(expected)
+                total += 1
+                if ok:
+                    earned += 1
+                answers.append({
+                    "question_id": f"{qid}_{oi}",
+                    "section": qsection,
+                    "question_num": num,
+                    "user_answer": sel,
+                    "correct": ok,
+                    "correct_answer": expected,
+                    "points_earned": 1 if ok else 0,
+                    "points_possible": 1,
+                    "answered": sel is not None,
+                })
+            continue
 
-        elif qtype in ("multiple", "true_false", "true_false_not_given"):
-            val = request.form.get(f"q{qi}_answer")
-            if val not in (None, ""):
-                try:
-                    user_answer = int(val)
-                except (ValueError, TypeError):
-                    user_answer = None
-                correct = user_answer == q.get("answer")
-
-        qpoints = q.get("points", 1)
-        total += qpoints
-        if correct:
-            earned += qpoints
+        # ============ SIMPLE MULTIPLE / TRUE-FALSE ============
+        val = request.form.get(f"q{qi}_answer")
+        user_answer = None
+        ok = False
+        if val not in (None, ""):
+            try:
+                user_answer = int(val)
+            except (ValueError, TypeError):
+                user_answer = None
+            ok = user_answer == q.get("answer")
+        total += 1
+        if ok:
+            earned += 1
         answers.append({
             "question_id": qid,
+            "section": qsection,
+            "question_num": start,
             "user_answer": user_answer,
-            "correct": correct,
+            "correct": ok,
             "correct_answer": q.get("answer"),
-            "points_earned": qpoints if correct else 0,
-            "points_possible": qpoints,
+            "points_earned": 1 if ok else 0,
+            "points_possible": 1,
             "answered": user_answer is not None,
         })
 
@@ -861,10 +925,26 @@ def submit_test_all(attempt_id):
         print(f"Admin notify error: {e}")
 
     # Show completion page inside the mini app (no redirect to old site)
+    # Per-section correct counts for the student (no percentage)
+    try:
+        breakdown = _build_section_breakdown(test, attempt)
+        sec_icons = {"listening": "🎧", "reading": "📖", "writing": "✍️"}
+        sec_names = {"listening": "Listening", "reading": "Reading", "writing": "Writing"}
+        sections = [{
+            "icon": sec_icons.get(s, "📝"),
+            "name": sec_names.get(s, s),
+            "correct": info["correct"],
+            "total": info["total"],
+        } for s, info in breakdown.items()]
+    except Exception as e:
+        print(f"Section breakdown error: {e}")
+        sections = []
+
     return render_template("tests/done.html",
                          score=percentage,
                          level=level["level"],
-                         label=level["label"])
+                         label=level["label"],
+                         sections=sections)
 
 
 def _save_result_to_db(test, attempt, percentage, level, attempt_id, tg_init=""):
@@ -982,14 +1062,10 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
     # Find access grant (which code opened this test)
     grant = _mongo.db.access_grants.find_one({"tg_id": str(tg_id)}) if tg_id else None
 
-    # Compute correct/total
+    # Compute correct/total (each answer = one question)
     attempt = TestAttempt.get_by_id(attempt_id)
-    correct = 0
-    total_q = 0
-    for a in attempt.get("answers", []):
-        total_q += 1
-        if a.get("correct"):
-            correct += 1
+    correct = sum(1 for a in attempt.get("answers", []) if a.get("correct"))
+    total_q = len(attempt.get("answers", []))
 
     # Extract writing answer(s) if present
     writing_text = ""
@@ -1065,118 +1141,48 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
 
 
 def _build_section_breakdown(test, attempt):
-    """Build per-section stats: {section: {correct, total, wrong:[numbers], details:[...]}}.
-    details: [{num, student, correct_ans, ok}] — what the student selected vs correct."""
+    """Build per-section stats from per-question answers.
+    {section: {correct, total, wrong:[numbers], details:[{num, student, correct, ok}]}}"""
     from collections import OrderedDict
 
     letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-
-    questions = test.get("questions", [])
-    answers_map = {}
-    for a in attempt.get("answers", []):
-        answers_map[a["question_id"]] = a
-
-    # Map each question block -> list of individual question numbers and correctness
     breakdown = OrderedDict()
-    for q in questions:
-        qid = q["id"]
-        section = q.get("section", "?")
-        qtype = q.get("type", "")
-        start = q.get("start_num", 1)
-        stored = answers_map.get(qid, {})
-        user_ans = stored.get("user_answer")
 
+    for a in attempt.get("answers", []):
+        section = a.get("section", "?")
         if section not in breakdown:
             breakdown[section] = {"correct": 0, "total": 0, "wrong": [], "details": []}
 
-        def add_detail(num, ok, student_disp, correct_disp):
-            breakdown[section]["total"] += 1
-            breakdown[section]["details"].append({
-                "num": num,
-                "ok": ok,
-                "student": student_disp,
-                "correct": correct_disp,
-            })
-            if ok:
-                breakdown[section]["correct"] += 1
-            else:
-                breakdown[section]["wrong"].append(num)
+        num = a.get("question_num", 0)
+        ok = bool(a.get("correct"))
+        student_raw = a.get("user_answer")
+        correct_raw = a.get("correct_answer")
 
-        def idx_to_letter(v):
+        # Convert index answers to letters, keep text answers as-is
+        def disp(v):
+            if v is None:
+                return "—"
             try:
-                return letters[int(v)] if int(v) < len(letters) else str(v)
+                iv = int(v)
+                return letters[iv] if iv < len(letters) else str(iv)
             except (ValueError, TypeError):
-                return str(v) if v is not None else "—"
+                return str(v)
 
-        # Writing task (free text) — teacher review, count separately
-        if qtype == "writing" and not q.get("gap_items"):
-            breakdown[section]["total"] += 1
-            continue
+        student_disp = disp(student_raw) if not isinstance(student_raw, str) or len(str(student_raw)) > 3 else str(student_raw)
+        # For gap-fill (string answers), keep text
+        if isinstance(student_raw, str) and len(student_raw) > 2:
+            student_disp = student_raw
+        correct_disp = disp(correct_raw) if not isinstance(correct_raw, str) or len(str(correct_raw)) > 3 else str(correct_raw)
+        if isinstance(correct_raw, str) and len(correct_raw) > 2:
+            correct_disp = correct_raw
 
-        # Gap-fill: each gap is a numbered question
-        if qtype == "writing" and q.get("gap_items"):
-            gaps = q.get("gap_items", [])
-            parts = []
-            if isinstance(user_ans, str) and user_ans:
-                parts = user_ans.split(",")
-            for i, gap in enumerate(gaps):
-                num = start + i
-                ua = parts[i].strip().lower() if i < len(parts) else ""
-                ok = ua == str(gap).strip().lower()
-                add_detail(num, ok,
-                           parts[i].strip() if i < len(parts) else "—",
-                           str(gap))
-            continue
-
-        # multiple_group: each item is a numbered question
-        if qtype == "multiple_group":
-            items = q.get("items", [])
-            for i, item in enumerate(items):
-                num = start + i
-                ok = False
-                sel = "—"
-                if isinstance(user_ans, dict):
-                    key = str(i)
-                    if key in user_ans and user_ans[key] is not None:
-                        try:
-                            sel = idx_to_letter(user_ans[key])
-                            ok = int(user_ans[key]) == int(item.get("answer"))
-                        except (ValueError, TypeError):
-                            ok = False
-                add_detail(num, ok, sel, idx_to_letter(item.get("answer")))
-            continue
-
-        # Matching: each option is a numbered question
-        if qtype == "matching":
-            correct_ans = q.get("answer", [])
-            # options are the people labels; items are the A-H choices
-            items = q.get("items", [])
-            options = q.get("options", [])
-            for i, expected in enumerate(correct_ans):
-                num = start + i
-                ok = False
-                sel = "—"
-                if isinstance(user_ans, dict):
-                    key = str(i)
-                    if key in user_ans and user_ans[key] is not None:
-                        try:
-                            sel = idx_to_letter(user_ans[key])
-                            ok = int(user_ans[key]) == int(expected)
-                        except (ValueError, TypeError):
-                            ok = False
-                correct_disp = idx_to_letter(expected)
-                add_detail(num, ok, sel, correct_disp)
-            continue
-
-        # Simple multiple / true_false
-        ok = False
-        sel = "—"
-        if user_ans is not None:
-            try:
-                sel = idx_to_letter(user_ans)
-                ok = int(user_ans) == int(q.get("answer"))
-            except (ValueError, TypeError):
-                ok = False
-        add_detail(start, ok, sel, idx_to_letter(q.get("answer")))
+        breakdown[section]["total"] += 1
+        breakdown[section]["details"].append({
+            "num": num, "ok": ok, "student": student_disp, "correct": correct_disp,
+        })
+        if ok:
+            breakdown[section]["correct"] += 1
+        else:
+            breakdown[section]["wrong"].append(num)
 
     return breakdown
