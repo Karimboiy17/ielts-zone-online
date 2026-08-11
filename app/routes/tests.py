@@ -1029,29 +1029,47 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
             else:
                 text += "\n   ✅ Hammasi to'g'ri"
 
+            # Per-question answers: student vs correct
+            details = info.get("details", [])
+            if details and len(details) <= 30:
+                text += "\n"
+                for d in details:
+                    mark = "✅" if d["ok"] else "❌"
+                    text += f"\n{mark} {sec_title[:3]} {d['num']}: "
+                    text += f"O'quvchi: <b>{d['student']}</b>"
+                    if not d["ok"]:
+                        text += f" | To'g'ri: {d['correct']}"
+            elif len(details) > 30:
+                text += f"\n   (Jami {len(details)} savol — batafsil ro'yxat juda uzun, /results yozing)"
+
     if writing_text:
         # Cap writing text at 2000 chars (Telegram limit)
         capped = writing_text if len(writing_text) <= 2000 else writing_text[:1997] + "..."
         text += f"\n\n━━━━━━━━━━━━━━━━\n✍️ <b>WRITING JAVOBI:</b>\n<i>{capped}</i>"
 
-    # Send to ALL admin chats (comma-separated)
+    # Send to ALL admin chats (comma-separated), split long messages
     admin_ids = _app.config.get("ADMIN_CHAT_IDS") or [admin_chat]
+    chunks = [text[i:i + 3900] for i in range(0, len(text), 3900)] if len(text) > 3900 else [text]
     for cid in admin_ids:
         if not cid:
             continue
-        try:
-            _req.post(
-                f"https://api.telegram.org/bot{bot_token}/sendMessage",
-                json={"chat_id": str(cid).strip(), "text": text, "parse_mode": "HTML"},
-                timeout=10,
-            )
-        except Exception:
-            pass
+        for chunk in chunks:
+            try:
+                _req.post(
+                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                    json={"chat_id": str(cid).strip(), "text": chunk, "parse_mode": "HTML"},
+                    timeout=10,
+                )
+            except Exception:
+                pass
 
 
 def _build_section_breakdown(test, attempt):
-    """Build per-section stats: {section: {correct, total, wrong:[numbers]}}."""
+    """Build per-section stats: {section: {correct, total, wrong:[numbers], details:[...]}}.
+    details: [{num, student, correct_ans, ok}] — what the student selected vs correct."""
     from collections import OrderedDict
+
+    letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 
     questions = test.get("questions", [])
     answers_map = {}
@@ -1069,7 +1087,26 @@ def _build_section_breakdown(test, attempt):
         user_ans = stored.get("user_answer")
 
         if section not in breakdown:
-            breakdown[section] = {"correct": 0, "total": 0, "wrong": []}
+            breakdown[section] = {"correct": 0, "total": 0, "wrong": [], "details": []}
+
+        def add_detail(num, ok, student_disp, correct_disp):
+            breakdown[section]["total"] += 1
+            breakdown[section]["details"].append({
+                "num": num,
+                "ok": ok,
+                "student": student_disp,
+                "correct": correct_disp,
+            })
+            if ok:
+                breakdown[section]["correct"] += 1
+            else:
+                breakdown[section]["wrong"].append(num)
+
+        def idx_to_letter(v):
+            try:
+                return letters[int(v)] if int(v) < len(letters) else str(v)
+            except (ValueError, TypeError):
+                return str(v) if v is not None else "—"
 
         # Writing task (free text) — teacher review, count separately
         if qtype == "writing" and not q.get("gap_items"):
@@ -1084,12 +1121,11 @@ def _build_section_breakdown(test, attempt):
                 parts = user_ans.split(",")
             for i, gap in enumerate(gaps):
                 num = start + i
-                breakdown[section]["total"] += 1
                 ua = parts[i].strip().lower() if i < len(parts) else ""
-                if ua == str(gap).strip().lower():
-                    breakdown[section]["correct"] += 1
-                else:
-                    breakdown[section]["wrong"].append(num)
+                ok = ua == str(gap).strip().lower()
+                add_detail(num, ok,
+                           parts[i].strip() if i < len(parts) else "—",
+                           str(gap))
             continue
 
         # multiple_group: each item is a numbered question
@@ -1097,52 +1133,50 @@ def _build_section_breakdown(test, attempt):
             items = q.get("items", [])
             for i, item in enumerate(items):
                 num = start + i
-                breakdown[section]["total"] += 1
                 ok = False
+                sel = "—"
                 if isinstance(user_ans, dict):
                     key = str(i)
                     if key in user_ans and user_ans[key] is not None:
                         try:
+                            sel = idx_to_letter(user_ans[key])
                             ok = int(user_ans[key]) == int(item.get("answer"))
                         except (ValueError, TypeError):
                             ok = False
-                if ok:
-                    breakdown[section]["correct"] += 1
-                else:
-                    breakdown[section]["wrong"].append(num)
+                add_detail(num, ok, sel, idx_to_letter(item.get("answer")))
             continue
 
         # Matching: each option is a numbered question
         if qtype == "matching":
             correct_ans = q.get("answer", [])
+            # options are the people labels; items are the A-H choices
+            items = q.get("items", [])
+            options = q.get("options", [])
             for i, expected in enumerate(correct_ans):
                 num = start + i
-                breakdown[section]["total"] += 1
                 ok = False
+                sel = "—"
                 if isinstance(user_ans, dict):
                     key = str(i)
                     if key in user_ans and user_ans[key] is not None:
                         try:
+                            sel = idx_to_letter(user_ans[key])
                             ok = int(user_ans[key]) == int(expected)
                         except (ValueError, TypeError):
                             ok = False
-                if ok:
-                    breakdown[section]["correct"] += 1
-                else:
-                    breakdown[section]["wrong"].append(num)
+                correct_disp = idx_to_letter(expected)
+                add_detail(num, ok, sel, correct_disp)
             continue
 
         # Simple multiple / true_false
-        breakdown[section]["total"] += 1
         ok = False
+        sel = "—"
         if user_ans is not None:
             try:
+                sel = idx_to_letter(user_ans)
                 ok = int(user_ans) == int(q.get("answer"))
             except (ValueError, TypeError):
                 ok = False
-        if ok:
-            breakdown[section]["correct"] += 1
-        else:
-            breakdown[section]["wrong"].append(start)
+        add_detail(start, ok, sel, idx_to_letter(q.get("answer")))
 
     return breakdown
