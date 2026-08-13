@@ -110,3 +110,11 @@ def _seed_data(app):
     except Exception as e:
         print(f"  ⚠ Auto-seed skipped: {e}")
 
+    # Auto-seed B1 MID test (always refresh content from code)
+    try:
+        from app.seed_b1 import seed_b1_mid
+        n = seed_b1_mid(mongo.db)
+        print(f"  ✓ B1 MID test seeded ({n} questions)")
+    except Exception as e:
+        print(f"  ⚠ Auto-seed B1 MID skipped: {e}")
+
