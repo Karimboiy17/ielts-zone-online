@@ -221,98 +221,21 @@ def _handle(app, update):
         teacher = text.strip()
         mongo.db.bot_states.update_one(
             {"tg_id": tg_id},
-            {"$set": {"state": "awaiting_code", "teacher_name": teacher, "updated_at": datetime.now(timezone.utc)}},
+            {"$set": {"state": "awaiting_test", "teacher_name": teacher, "updated_at": datetime.now(timezone.utc)}},
             upsert=True,
         )
         _send(app, chat_id,
             f"✅ O'qituvchi: <b>{teacher}</b> — saqlandi!\n\n"
-            f"3️⃣ Endi <b>o'qituvchingiz bergan kodni</b> yozing.\n\n"
-            f"🔑 Kodni o'qituvchingizdan oling — u sizga maxsus kod beradi.")
+            f"3️⃣ Endi <b>qaysi imtihonni topshirmoqchisiz?</b>\n\n"
+            f"👇 Quyidagi tugmalardan birini tanlang:",
+            _test_selector_kb())
         return
 
-    # ==== STEP 3: awaiting code ====
-    if cur_state == "awaiting_code":
-        access_codes = current_app_access_codes(app)
-        code_key = text.strip().lower().replace(" ", "")
-        if code_key not in access_codes:
-            _send(app, chat_id, "❌ Kod noto'g'ri. O'qituvchingizdan to'g'ri kodni so'rang.")
-            return
-        section = access_codes[code_key]
-        test = mongo.db.tests.find_one({"section": section, "active": True})
-        if not test:
-            _send(app, chat_id, "❌ Bu kod uchun test topilmadi. O'qituvchingizga murojaat qiling.")
-            return
-        title = test.get("title", section)
-
-        # ==== ANTI-DOUBLE-TAKE: check if student already took this test ====
-        already = _student_already_took(app, tg_id, section)
-        if already:
-            # Save which test they want to retake
-            mongo.db.bot_states.update_one(
-                {"tg_id": tg_id},
-                {"$set": {"retake_section": section, "retake_title": title,
-                          "updated_at": datetime.now(timezone.utc)}},
-                upsert=True,
-            )
-            _send(app, chat_id,
-                f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon topshirgansiz</b>!\n\n"
-                f"📅 Sana: {str(already.get('completed_at', '—'))[:16]}\n"
-                f"🎯 Ball: {already.get('score', '—')}%\n"
-                f"🏆 Daraja: {already.get('level', already.get('cefr_level', '—'))}\n\n"
-                f"Har bir imtihon faqat <b>bir marta</b> topshiriladi.\n"
-                f"Qayta ishlash uchun quyidagi tugmani bosing — so'rovingiz adminga yuboriladi.",
-                {"inline_keyboard": [[{"text": "🔁 Qayta ishlash so'rovi yuborish",
-                                       "callback_data": "retake_request"}]]})
-            return
-
-        site_url = app.config.get("SITE_URL", "")
-        full_name = (state or {}).get("full_name", fname)
-        teacher_name = (state or {}).get("teacher_name", "")
-        # Save full registration
-        mongo.db.access_grants.update_one(
-            {"tg_id": tg_id},
-            {"$set": {"code": code_key, "section": section, "test_title": title,
-                      "tg_username": uname, "tg_name": full_name,
-                      "teacher_name": teacher_name,
-                      "granted_at": datetime.now(timezone.utc)}},
-            upsert=True,
-        )
-        # Also save to user profile in DB
-        _save_student_profile(app, tg_id, full_name, teacher_name, code_key, section)
-
-        # ===== ADMIN APPROVAL GATE (prevents code sharing/spreading) =====
-        # Check if this student was already approved for this section
-        student_doc = mongo.db.students.find_one({"tg_id": tg_id})
-        approved_sections = (student_doc or {}).get("approved_sections", [])
-        if section in approved_sections:
-            # Already approved — open test directly
-            mongo.db.bot_states.update_one({"tg_id": tg_id}, {"$set": {"state": "done"}})
-            _send(app, chat_id,
-                f"✅ <b>{full_name}</b>, ro'yxatdan o'tdingiz!\n\n"
-                f"📚 O'qituvchi: {teacher_name}\n"
-                f"📝 Imtihon: <b>{title}</b>\n\n"
-                f"👇 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
-                f"⏱️ Vaqt: {test.get('time_limit', 70)} daqiqa\n"
-                f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
-                {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
-                                       "web_app": {"url": f"{site_url}/m/{section}/"}}]]})
-            return
-
-        # Not approved yet — send approval request to admin
-        mongo.db.bot_states.update_one(
-            {"tg_id": tg_id},
-            {"$set": {"state": "awaiting_approval", "pending_section": section,
-                      "pending_title": title, "updated_at": datetime.now(timezone.utc)}},
-            upsert=True,
-        )
-        _send_student_approval_request(app, tg_id, full_name, uname,
-                                       teacher_name, title, section, code_key)
+    # ==== STEP 3: awaiting test selection (inline buttons) ====
+    if cur_state == "awaiting_test":
         _send(app, chat_id,
-            f"📝 <b>{full_name}</b>, so'rovingiz <b>adminga yuborildi</b>!\n\n"
-            f"📚 O'qituvchi: {teacher_name}\n"
-            f"📝 Imtihon: <b>{title}</b>\n\n"
-            f"⏳ Admin sizni tasdiqlashi kutilmoqda. Tasdiqlangach, imtihon ochiladi.\n"
-            f"Buni odatda 1-2 daqiqa ichida qilamiz. Iltimos kuting... 🙏")
+            "📋 Iltimos, quyidagi tugmalardan imtihonni tanlang 👇",
+            _test_selector_kb())
         return
 
     # ==== Any other text → menu ====
@@ -320,8 +243,31 @@ def _handle(app, update):
     return
 
 
+def _test_selector_kb():
+    """Build inline keyboard with all available exams (no codes needed)."""
+    from app.extensions import mongo
+    exams = [
+        ("novice_mid", "🌱 NOVICE · MID"), ("novice_end", "🌱 NOVICE · END"),
+        ("a1_mid", "🔰 A1 · MID"), ("a1_end", "🔰 A1 · END"),
+        ("a2_mid", "📘 A2 · MID"), ("a2_end", "📘 A2 · END"),
+        ("preintermediate_mid", "📙 PRE-INT · MID"), ("preintermediate_end", "📙 PRE-INT · END"),
+        ("b1_mid", "📗 B1 · MID"), ("b1_end", "📗 B1 · END"),
+        ("b1plus_mid", "📕 B1+ · MID"), ("b1plus_end", "📕 B1+ · END"),
+    ]
+    # Only show exams that actually exist in DB
+    rows = []
+    for section, label in exams:
+        try:
+            test = mongo.db.tests.find_one({"section": section, "active": True})
+            if test:
+                rows.append([{"text": label, "callback_data": f"pick_test_{section}"}])
+        except Exception:
+            pass
+    return {"inline_keyboard": rows}
+
+
 def _send_student_approval_request(app, tg_id, full_name, tg_uname, teacher_name,
-                                   test_title, section, code_key):
+                                   test_title, section):
     """Ask all admins to approve this student before they start the test."""
     import requests as _req
     admin_chat = app.config.get("ADMIN_CHAT_ID", "")
@@ -336,7 +282,6 @@ def _send_student_approval_request(app, tg_id, full_name, tg_uname, teacher_name
         f"📱 Telegram: @{tg_uname if tg_uname else '—'}\n"
         f"📚 O'qituvchi: {teacher_name or '—'}\n"
         f"📝 Imtihon: <b>{test_title}</b>\n"
-        f"🔑 Kod: {code_key}\n"
         f"━━━━━━━━━━━━━━━━\n"
         f"Bu o'quvchi rostdan ham shu imtihonni topshishi kerakmi?"
     )
@@ -484,6 +429,80 @@ def _callback(app, cb):
     chat_id = cb["message"]["chat"]["id"]
     cid = cb["id"]
     _api(app, "answerCallbackQuery", {"callback_query_id": cid})
+
+    # Student picks a test from the selector: pick_test_<section>
+    if data.startswith("pick_test_"):
+        section = data[len("pick_test_"):]
+        tg_id = str(cb.get("from", {}).get("id", ""))
+        tg_uname = cb.get("from", {}).get("username", "")
+        from app.extensions import mongo
+
+        st = mongo.db.bot_states.find_one({"tg_id": tg_id})
+        full_name = (st or {}).get("full_name", "O'quvchi")
+        teacher_name = (st or {}).get("teacher_name", "")
+        test = mongo.db.tests.find_one({"section": section, "active": True})
+        if not test:
+            _send(app, chat_id, "❌ Bu imtihon hozircha mavjud emas. O'qituvchingizga murojaat qiling.")
+            return
+        title = test.get("title", section)
+
+        # ==== ANTI-DOUBLE-TAKE ====
+        already = _student_already_took(app, tg_id, section)
+        if already:
+            mongo.db.bot_states.update_one(
+                {"tg_id": tg_id},
+                {"$set": {"retake_section": section, "retake_title": title,
+                          "updated_at": datetime.now(timezone.utc)}},
+                upsert=True,
+            )
+            _send(app, chat_id,
+                f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon topshirgansiz</b>!\n\n"
+                f"📅 Sana: {str(already.get('completed_at', '—'))[:16]}\n"
+                f"🎯 Ball: {already.get('score', '—')}%\n"
+                f"🏆 Daraja: {already.get('level', already.get('cefr_level', '—'))}\n\n"
+                f"Har bir imtihon faqat <b>bir marta</b> topshiriladi.\n"
+                f"Qayta ishlash uchun tugmani bosing — so'rovingiz adminga yuboriladi.",
+                {"inline_keyboard": [[{"text": "🔁 Qayta ishlash so'rovi yuborish",
+                                       "callback_data": "retake_request"}]]})
+            return
+
+        # Save registration
+        _save_student_profile(app, tg_id, full_name, teacher_name, "", section)
+
+        # ==== ADMIN APPROVAL GATE ====
+        student_doc = mongo.db.students.find_one({"tg_id": tg_id})
+        approved_sections = (student_doc or {}).get("approved_sections", [])
+        if section in approved_sections:
+            # Already approved — open test directly
+            site_url = app.config.get("SITE_URL", "")
+            mongo.db.bot_states.update_one({"tg_id": tg_id}, {"$set": {"state": "done"}})
+            _send(app, chat_id,
+                f"✅ <b>{full_name}</b>, ro'yxatdan o'tdingiz!\n\n"
+                f"📚 O'qituvchi: {teacher_name}\n"
+                f"📝 Imtihon: <b>{title}</b>\n\n"
+                f"👇 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
+                f"⏱️ Vaqt: {test.get('time_limit', 70)} daqiqa\n"
+                f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
+                {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
+                                       "web_app": {"url": f"{site_url}/m/{section}/"}}]]})
+            return
+
+        # Not approved yet — ask admin
+        mongo.db.bot_states.update_one(
+            {"tg_id": tg_id},
+            {"$set": {"state": "awaiting_approval", "pending_section": section,
+                      "pending_title": title, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        _send_student_approval_request(app, tg_id, full_name, tg_uname,
+                                       teacher_name, title, section)
+        _send(app, chat_id,
+            f"📝 <b>{full_name}</b>, so'rovingiz <b>adminga yuborildi</b>!\n\n"
+            f"📚 O'qituvchi: {teacher_name}\n"
+            f"📝 Imtihon: <b>{title}</b>\n\n"
+            f"⏳ Admin sizni tasdiqlashi kutilmoqda. Tasdiqlangach, imtihon ochiladi.\n"
+            f"Buni odatda 1-2 daqiqa ichida qilamiz. Iltimos kuting... 🙏")
+        return
 
     # Admin approves/rejects NEW student approval: approve_student_<tg_id>_<section>
     if data.startswith("approve_student_") or data.startswith("reject_student_"):
