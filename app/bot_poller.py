@@ -24,40 +24,56 @@ def current_app_access_codes(app):
 
 def ensure_access_codes(app):
     """Generate fresh random codes on first run and notify admin privately.
-    Codes are stored in DB — students never see them from the bot."""
+    Codes are stored in DB — students never see them from the bot.
+    Also adds codes for any NEW sections not yet in the stored set."""
     try:
         from app.extensions import mongo
-        doc = mongo.db.settings.find_one({"key": "access_codes"})
-        if doc and doc.get("codes"):
-            return doc["codes"]
         import secrets, string
-        sections = ["novice_mid", "novice_end", "a1_mid", "a1_end",
-                    "a2_mid", "a2_end", "preintermediate_mid", "preintermediate_end",
-                    "b1_mid", "b1_end",
-                    "b1plus_mid", "b1plus_end"]
+        all_sections = ["novice_mid", "novice_end", "a1_mid", "a1_end",
+                        "a2_mid", "a2_end", "preintermediate_mid", "preintermediate_end",
+                        "b1_mid", "b1_end",
+                        "b1plus_mid", "b1plus_end"]
         alphabet = string.ascii_lowercase + string.digits
-        codes = {}
-        for s in sections:
-            codes["".join(secrets.choice(alphabet) for _ in range(8))] = s
-        mongo.db.settings.update_one(
-            {"key": "access_codes"},
-            {"$set": {"codes": codes, "updated_at": datetime.now(timezone.utc)}},
-            upsert=True,
-        )
-        # Notify admin privately with the codes
-        admin_chat = app.config.get("ADMIN_CHAT_ID", "")
-        token = app.config.get("BOT_TOKEN", "")
-        if admin_chat and token:
-            lines = ["🔑 <b>YANGI IMTIHON KODLARI</b>\n", "Faqat o'qituvchilarga bering:\n"]
-            for code, sec in codes.items():
-                test = mongo.db.tests.find_one({"section": sec})
-                title = test["title"] if test else sec
-                lines.append(f"<code>{code}</code> → <b>{title}</b>")
-            import requests
-            requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                          json={"chat_id": admin_chat, "text": "\n".join(lines),
-                                "parse_mode": "HTML"}, timeout=10)
-        print(f"  ✓ Access codes generated ({len(codes)} codes)")
+
+        doc = mongo.db.settings.find_one({"key": "access_codes"})
+        codes = dict(doc.get("codes", {})) if doc and doc.get("codes") else {}
+
+        # Add codes for missing sections
+        new_codes = {}
+        for s in all_sections:
+            if s not in codes.values():
+                code = "".join(secrets.choice(alphabet) for _ in range(8))
+                while code in codes:
+                    code = "".join(secrets.choice(alphabet) for _ in range(8))
+                codes[code] = s
+                new_codes[code] = s
+
+        if new_codes or not doc:
+            mongo.db.settings.update_one(
+                {"key": "access_codes"},
+                {"$set": {"codes": codes, "updated_at": datetime.now(timezone.utc)}},
+                upsert=True,
+            )
+            # Notify admin privately with the NEW codes only
+            admin_chat = app.config.get("ADMIN_CHAT_ID", "")
+            token = app.config.get("BOT_TOKEN", "")
+            if admin_chat and token and new_codes:
+                lines = ["🔑 <b>YANGI IMTIHON KODLARI</b>\n", "Faqat o'qituvchilarga bering:\n"]
+                for code, sec in new_codes.items():
+                    test = mongo.db.tests.find_one({"section": sec})
+                    title = test["title"] if test else sec
+                    lines.append(f"<code>{code}</code> → <b>{title}</b>")
+                import requests
+                for cid in (app.config.get("ADMIN_CHAT_IDS") or [admin_chat]):
+                    if not cid:
+                        continue
+                    try:
+                        requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                                      json={"chat_id": str(cid).strip(), "text": "\n".join(lines),
+                                            "parse_mode": "HTML"}, timeout=10)
+                    except Exception:
+                        pass
+            print(f"  ✓ Access codes ready ({len(codes)} codes, {len(new_codes)} new)")
         return codes
     except Exception as e:
         print(f"  ⚠ Access codes error: {e}")
