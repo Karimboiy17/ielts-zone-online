@@ -104,7 +104,8 @@ def take_test(attempt_id):
 
     # NEW: Engnovate-style single page for level-based exams
     if attempt["section"] in ("a1_mid", "a1_end", "a2_mid", "a2_end", "b1_mid", "b1_end",
-                              "b1plus_mid", "b1plus_end", "novice_mid", "novice_end"):
+                              "b1plus_mid", "b1plus_end", "novice_mid", "novice_end",
+                              "preintermediate_mid", "preintermediate_end"):
         return redirect(url_for("tests.take_test_all", attempt_id=attempt_id))
 
     test = TestModel.get_by_id(attempt["test_id"])
@@ -112,7 +113,8 @@ def take_test(attempt_id):
     # All objective sections use per-question view (like real exam)
     # Level-based sections (a1_mid, a1_end, ...) also use per-question view
     level_sections = ("a1_mid", "a1_end", "a2_mid", "a2_end", "b1_mid", "b1_end",
-                      "b1plus_mid", "b1plus_end", "novice_mid", "novice_end")
+                      "b1plus_mid", "b1plus_end", "novice_mid", "novice_end",
+                      "preintermediate_mid", "preintermediate_end")
     if attempt["section"] in ("mock", "reading", "listening", "grammar", "writing") or attempt["section"] in level_sections:
         questions = test.get("questions", [])
         if not questions:

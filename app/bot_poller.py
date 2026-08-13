@@ -32,7 +32,8 @@ def ensure_access_codes(app):
             return doc["codes"]
         import secrets, string
         sections = ["novice_mid", "novice_end", "a1_mid", "a1_end",
-                    "a2_mid", "a2_end", "b1_mid", "b1_end",
+                    "a2_mid", "a2_end", "preintermediate_mid", "preintermediate_end",
+                    "b1_mid", "b1_end",
                     "b1plus_mid", "b1plus_end"]
         alphabet = string.ascii_lowercase + string.digits
         codes = {}

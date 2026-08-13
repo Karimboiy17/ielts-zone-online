@@ -1,26 +1,29 @@
 """
 IELTS ZONE online — Level Calculator
-Converts test scores to IELTS ZONE levels (NOVICE, A1, A2, B1, B1+)
+Converts test scores to IELTS ZONE levels (NOVICE, A1, A2, PRE-INTERMEDIATE, B1, B1+)
 
 Level alignment (percentage-based):
-  NOVICE: 0-19%   — Boshlang'ich (beginner)
-  A1:     20-39%  — Basic (can understand simple phrases)
-  A2:     40-59%  — Elementary (can understand common expressions)
-  B1:     60-79%  — Intermediate (can understand routine matters)
-  B1+:    80-100% — Upper-intermediate (ready for the next stage)
+  NOVICE:          0-16%  — Boshlang'ich (beginner)
+  A1:              17-33% — Basic (can understand simple phrases)
+  A2:              34-50% — Elementary (can understand common expressions)
+  PRE-INTERMEDIATE: 51-66% — Pre-intermediate (can handle routine situations)
+  B1:              67-83% — Intermediate (can understand routine matters)
+  B1+:             84-100% — Upper-intermediate (ready for the next stage)
 
 For Writing (teacher-scored, out of 100):
   Same thresholds apply based on total points.
 """
 
 LEVELS = [
-    {"level": "B1+", "label": "Upper-Intermediate", "min_pct": 80, "color": "#6D28D9",
+    {"level": "B1+", "label": "Upper-Intermediate", "min_pct": 84, "color": "#5B21B6",
      "description": "Complex texts and confident communication"},
-    {"level": "B1", "label": "Intermediate", "min_pct": 60, "color": "#7C3AED",
+    {"level": "B1", "label": "Intermediate", "min_pct": 67, "color": "#6D28D9",
      "description": "Routine matters in work, school, leisure"},
-    {"level": "A2", "label": "Elementary", "min_pct": 40, "color": "#8B5CF6",
+    {"level": "PRE-INTERMEDIATE", "label": "Pre-Intermediate", "min_pct": 51, "color": "#7C3AED",
+     "description": "Can handle routine situations"},
+    {"level": "A2", "label": "Elementary", "min_pct": 34, "color": "#8B5CF6",
      "description": "Frequently used expressions"},
-    {"level": "A1", "label": "Basic", "min_pct": 20, "color": "#A78BFA",
+    {"level": "A1", "label": "Basic", "min_pct": 17, "color": "#A78BFA",
      "description": "Simple everyday phrases"},
     {"level": "NOVICE", "label": "Novice", "min_pct": 0, "color": "#C4B5FD",
      "description": "Starting to learn English"},
@@ -64,8 +67,8 @@ def get_all_levels():
 
 def get_level_code(level_key):
     """Map section names like 'a1_mid' to level code 'A1'."""
-    for code, prefix in [("B1+", "b1plus"), ("B1", "b1"), ("A2", "a2"),
-                         ("A1", "a1"), ("NOVICE", "novice")]:
+    for code, prefix in [("B1+", "b1plus"), ("B1", "b1"), ("PRE-INTERMEDIATE", "preintermediate"),
+                         ("A2", "a2"), ("A1", "a1"), ("NOVICE", "novice")]:
         if level_key.startswith(prefix):
             return code
     return None
