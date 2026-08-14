@@ -197,7 +197,7 @@ test = {
     "section": "b1_mid",
     "title": "B1 · MID",
     "icon": "📗",
-    "time_limit": 45,
+    "time_limit": 55,
     "price": 0,
     "original_price": 0,
     "active": True,
