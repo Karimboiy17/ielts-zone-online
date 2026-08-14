@@ -54,14 +54,27 @@ def start_test(section):
 def mini_test(section):
     """Mini app entry: opens the test DIRECTLY (no site login page).
     Access is granted by the bot code — no site login required.
-    Reuses existing attempt on reload (no duplicate attempts)."""
+    Reuses existing attempt on reload (no duplicate attempts).
+    Links the attempt to the student's tg_id so the bot can lock retakes."""
     test = TestModel.get_by_section(section)
     if not test:
         flash("Test topilmadi", "error")
         return redirect(url_for("main.index"))
 
+    # Identify the student: session user (if logged in) OR ?tg= param (bot link)
+    user_id = None
+    tg_id = request.args.get("tg", "")
+    if current_user.is_authenticated:
+        user_id = current_user.id
+        if not tg_id:
+            u = mongo.db.users.find_one({"_id": ObjectId(current_user.id)})
+            tg_id = str((u or {}).get("telegram_id", ""))
+    elif tg_id:
+        user_id = _ensure_tg_user(tg_id)
+    if not user_id:
+        user_id = _ensure_anonymous_user()
+
     # Reuse existing unfinished attempt for this user+section if present
-    user_id = current_user.id if current_user.is_authenticated else _ensure_anonymous_user()
     existing = mongo.db.attempts.find_one({
         "user_id": ObjectId(user_id),
         "section": section,
@@ -71,7 +84,81 @@ def mini_test(section):
         return redirect(url_for("tests.take_test_all", attempt_id=existing["_id"]))
 
     attempt = TestAttempt.create(user_id, test["_id"], section)
+    if tg_id:
+        # Link the attempt to the student so the bot can detect 'already started'
+        mongo.db.attempts.update_one(
+            {"_id": attempt["_id"]},
+            {"$set": {"tg_id": tg_id}}
+        )
+        # Mark student doc: this section has been started (anti-retake key)
+        mongo.db.students.update_one(
+            {"tg_id": tg_id},
+            {"$addToSet": {"started_tests": {
+                "section": section,
+                "test_title": test.get("title", section),
+                "started_at": datetime.now(timezone.utc),
+            }}},
+            upsert=True,
+        )
+        # Swap the bot's 'start' button for a retake-request button
+        _swap_start_button_to_retake(tg_id, section, test.get("title", section))
     return redirect(url_for("tests.take_test_all", attempt_id=attempt["_id"]))
+
+
+def _ensure_tg_user(tg_id):
+    """Find-or-create a real per-student user for this Telegram id
+    (so attempts are linked to the actual student, not the shared guest)."""
+    from app.models import User
+    from werkzeug.security import generate_password_hash as gph
+    import secrets
+    user = User.get_by_telegram_id(tg_id)
+    if user:
+        return str(user.id)
+    username = f"tg_{tg_id}"
+    base = username
+    counter = 1
+    while User.get_by_username(username):
+        username = f"{base}{counter}"
+        counter += 1
+    user = User.create("O'quvchi", f"tg{tg_id}@telegram.local", gph(secrets.token_hex(16)),
+                       "", username)
+    mongo.db.users.update_one(
+        {"_id": ObjectId(user.id)},
+        {"$set": {"telegram_id": str(tg_id)}}
+    )
+    return str(user.id)
+
+
+def _swap_start_button_to_retake(tg_id, section, title):
+    """Edit the bot's 'start test' message: replace the WebApp button with a
+    'Qayta ishlash so'rovi' button (admin-gated). Called when the test starts."""
+    try:
+        from app.extensions import mongo as _mongo
+        import requests as _req
+        token = current_app.config.get("BOT_TOKEN", "")
+        if not token:
+            return
+        st = _mongo.db.bot_states.find_one({"tg_id": str(tg_id)})
+        mid = (st or {}).get("start_msg_id")
+        chat = (st or {}).get("start_msg_chat_id")
+        if not mid or not chat:
+            return
+        _mongo.db.bot_states.update_one(
+            {"tg_id": str(tg_id)},
+            {"$set": {"retake_section": section, "retake_title": title,
+                      "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        _req.post(
+            f"https://api.telegram.org/bot{token}/editMessageReplyMarkup",
+            json={"chat_id": chat, "message_id": mid,
+                  "reply_markup": {"inline_keyboard": [[
+                      {"text": "🔁 Qayta ishlash so'rovi",
+                       "callback_data": "retake_request"}]]}},
+            timeout=10,
+        )
+    except Exception:
+        pass
 
 
 def _ensure_anonymous_user():

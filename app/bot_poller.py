@@ -101,6 +101,33 @@ def _send(app, chat_id, text, kb=None):
     if kb: p["reply_markup"] = kb
     _api(app, "sendMessage", p)
 
+def _send_start_button(app, chat_id, tg_id, title, section, site_url, text):
+    """Send the 'start test' WebApp button and remember the message id so it can
+    be swapped for a retake button the moment the student opens the test."""
+    url = f"{site_url}/m/{section}/?tg={tg_id}"
+    kb = {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
+                                "web_app": {"url": url}}]]}
+    resp = _api(app, "sendMessage",
+                {"chat_id": chat_id, "text": text, "parse_mode": "HTML",
+                 "reply_markup": kb})
+    mid = None
+    try:
+        if resp and resp.get("ok"):
+            mid = resp.get("result", {}).get("message_id")
+    except Exception:
+        pass
+    try:
+        from app.extensions import mongo
+        mongo.db.bot_states.update_one(
+            {"tg_id": str(tg_id)},
+            {"$set": {"start_msg_id": mid, "start_msg_chat_id": chat_id,
+                      "start_section": section, "start_title": title,
+                      "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+    except Exception:
+        pass
+
 def _menu(app, chat_id, text):
     site_url = app.config.get("SITE_URL", "")
     _send(app, chat_id, text, _main_menu(site_url))
@@ -401,6 +428,14 @@ def _student_already_took(app, tg_id, section):
             })
             if attempt:
                 return attempt
+        # 3) Direct: attempts carrying tg_id (mini-app start links the student)
+        attempt = mongo.db.attempts.find_one({
+            "tg_id": str(tg_id),
+            "section": section,
+            "status": {"$in": ["started", "completed"]},
+        })
+        if attempt:
+            return attempt
         return None
     except Exception:
         return None
@@ -455,15 +490,22 @@ def _callback(app, cb):
                           "updated_at": datetime.now(timezone.utc)}},
                 upsert=True,
             )
-            _send(app, chat_id,
-                f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon topshirgansiz</b>!\n\n"
-                f"📅 Sana: {str(already.get('completed_at', '—'))[:16]}\n"
-                f"🎯 Ball: {already.get('score', '—')}%\n"
-                f"🏆 Daraja: {already.get('level', already.get('cefr_level', '—'))}\n\n"
-                f"Har bir imtihon faqat <b>bir marta</b> topshiriladi.\n"
-                f"Qayta ishlash uchun tugmani bosing — so'rovingiz adminga yuboriladi.",
-                {"inline_keyboard": [[{"text": "🔁 Qayta ishlash so'rovi yuborish",
-                                       "callback_data": "retake_request"}]]})
+            if already.get("status") == "started" or not already.get("completed_at"):
+                msg = (f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon boshlagansiz</b>!\n\n"
+                       f"📅 Boshlangan: {str(already.get('started_at', '—'))[:16]}\n\n"
+                       f"Har bir imtihon faqat <b>bir marta</b> boshlanadi.\n"
+                       f"Testni tugatmasdan chiqib ketgan bo'lsangiz, qayta ishlash "
+                       f"uchun tugmani bosing — so'rovingiz adminga yuboriladi.")
+            else:
+                msg = (f"⚠️ <b>{title}</b> imtihonini siz <b>allaqachon topshirgansiz</b>!\n\n"
+                       f"📅 Sana: {str(already.get('completed_at', '—'))[:16]}\n"
+                       f"🎯 Ball: {already.get('score', '—')}%\n"
+                       f"🏆 Daraja: {already.get('level', already.get('cefr_level', '—'))}\n\n"
+                       f"Har bir imtihon faqat <b>bir marta</b> topshiriladi.\n"
+                       f"Qayta ishlash uchun tugmani bosing — so'rovingiz adminga yuboriladi.")
+            _send(app, chat_id, msg,
+                  {"inline_keyboard": [[{"text": "🔁 Qayta ishlash so'rovi yuborish",
+                                         "callback_data": "retake_request"}]]})
             return
 
         # Save registration
@@ -476,15 +518,13 @@ def _callback(app, cb):
             # Already approved — open test directly
             site_url = app.config.get("SITE_URL", "")
             mongo.db.bot_states.update_one({"tg_id": tg_id}, {"$set": {"state": "done"}})
-            _send(app, chat_id,
+            _send_start_button(app, chat_id, tg_id, title, section, site_url,
                 f"✅ <b>{full_name}</b>, ro'yxatdan o'tdingiz!\n\n"
                 f"📚 O'qituvchi: {teacher_name}\n"
                 f"📝 Imtihon: <b>{title}</b>\n\n"
                 f"👇 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
                 f"⏱️ Vaqt: {test.get('time_limit', 70)} daqiqa\n"
-                f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
-                {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
-                                       "web_app": {"url": f"{site_url}/m/{section}/"}}]]})
+                f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!")
             return
 
         # Not approved yet — ask admin
@@ -533,14 +573,12 @@ def _callback(app, cb):
                 )
                 site_url = app.config.get("SITE_URL", "")
                 # Notify student — give them the test button
-                _send(app, student_tg_id,
+                _send_start_button(app, student_tg_id, student_tg_id, title, section, site_url,
                     f"✅ <b>{sname}</b>, siz <b>tasdiqlandingiz</b>!\n\n"
                     f"📝 Imtihon: <b>{title}</b>\n\n"
                     f"👇 Quyidagi tugmani bosing — imtihon Telegram ichida ochiladi.\n\n"
                     f"⏱️ Vaqt: {test_title['time_limit'] if test_title else 70} daqiqa\n"
-                    f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!",
-                    {"inline_keyboard": [[{"text": f"🚀 {title} imtihonini boshlash",
-                                           "web_app": {"url": f"{site_url}/m/{section}/"}}]]})
+                    f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!")
                 # Reply to admin
                 _send(app, chat_id, f"✅ <b>{sname}</b> tasdiqlandi — imtihon ochildi!")
             else:
@@ -580,11 +618,23 @@ def _callback(app, cb):
                         "user_id": user["_id"],
                         "section": section,
                     })
+                # Also remove attempts linked via tg_id (mini-app start path)
+                mongo.db.attempts.delete_many({
+                    "tg_id": student_tg_id,
+                    "section": section,
+                })
                 if student and student.get("completed_tests"):
                     mongo.db.students.update_one(
                         {"tg_id": student_tg_id},
                         {"$set": {"completed_tests": [
                             t for t in student["completed_tests"] if t.get("section") != section
+                        ]}}
+                    )
+                if student and student.get("started_tests"):
+                    mongo.db.students.update_one(
+                        {"tg_id": student_tg_id},
+                        {"$set": {"started_tests": [
+                            t for t in student["started_tests"] if t.get("section") != section
                         ]}}
                     )
                 # Reset bot state so the student can re-register
