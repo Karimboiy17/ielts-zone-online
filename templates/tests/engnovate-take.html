@@ -543,12 +543,12 @@ body { background: var(--bg-secondary); }
 
 <script>
 // ===== STEP-BASED TEST: 0=Listening, 1=Reading, 2=Writing =====
-var STEP_TIMES = {0: 0, 1: 35*60, 2: 15*60};  // listening: audio-driven, reading 35min, writing 15min
+var STEP_TIMES = {0: 0, 1: 30*60, 2: 15*60};  // listening: audio-driven, reading 30min, writing 15min (jami 45)
 var STEP_LABELS = {0: '🎧 LISTENING', 1: '📖 READING', 2: '✍️ WRITING'};
 var currentStep = 0;
 var timerInterval = null;
 var timeLeft = 0;
-var stepRemaining = {0: 0, 1: 35*60, 2: 15*60};  // per-step remaining time (never resets)
+var stepRemaining = {0: 0, 1: 30*60, 2: 15*60};  // per-step remaining time (never resets)
 var reviewMode = false;   // after writing time ends: 1 minute review
 
 function showStep(step) {
@@ -585,7 +585,7 @@ function showStep(step) {
   // Step hint
   var hints = {
     0: '🎧 Audioni ESHITING (faqat 1 marta), keyin savollarga javob bering',
-    1: '⏱️ Reading — 35 daqiqa',
+    1: '⏱️ Reading — 30 daqiqa',
     2: '⏱️ Writing — 15 daqiqa'
   };
   document.getElementById('stepHint').textContent = reviewMode ? '⏱️ Javoblarni tekshirish uchun 1 daqiqa' : (hints[step] || '');
