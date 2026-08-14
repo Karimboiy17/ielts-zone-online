@@ -644,11 +644,13 @@ def _callback(app, cb):
                               "retake_section": section, "updated_at": datetime.now(timezone.utc)}},
                     upsert=True,
                 )
-                # Notify student
-                _send(app, student_tg_id,
+                # Notify student — give a fresh start button right away
+                site_url = app.config.get("SITE_URL", "")
+                _send_start_button(app, student_tg_id, student_tg_id, title, section, site_url,
                     f"✅ <b>{title}</b> imtihonini qayta ishlashga <b>ruxsat berildi</b>!\n\n"
-                    f"📝 Kodni qayta yuboring — imtihon yangidan ochiladi.\n"
-                    f"Masalan, o'qituvchingiz bergan kodni yozing.")
+                    f"👇 Quyidagi tugmani bosing — imtihon yangidan ochiladi.\n\n"
+                    f"⏱️ Vaqt: {test_title['time_limit'] if test_title else 70} daqiqa\n"
+                    f"⚠️ Imtihonni boshlagach, vaqt orqaga qaytmaydi!")
                 # Reply to admin
                 _send(app, chat_id, f"✅ <b>{sname}</b> uchun <b>{title}</b> qayta ishlash tasdiqlandi!")
             else:
