@@ -138,6 +138,12 @@ body { background: var(--bg-secondary); }
   margin-bottom: 14px;
 }
 .q-text { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.notice-box {
+  border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--card-bg); padding: 14px 16px; margin-bottom: 10px;
+  font-size: 14px; line-height: 1.65; color: var(--text);
+  white-space: pre-wrap; font-family: Georgia, 'Times New Roman', serif;
+}
 .q-picture-row { display: grid; grid-template-columns: 4fr 1fr; gap: 20px; align-items: start; }
 .q-picture-left { text-align: center; }
 .q-picture-left img { width: 100%; height: auto; border-radius: 8px; }
@@ -438,6 +444,20 @@ body { background: var(--bg-secondary); }
               <label class="pic-option" onclick="selectPicOption(this, {{ oi }})">
                 <img src="{{ opt_img }}" alt="Option {{ ['A','B','C','D'][oi] }}">
                 <span class="pic-letter">{{ ['A','B','C','D'][oi] }}</span>
+                <input type="radio" name="q{{ qi }}_i{{ ii }}" value="{{ oi }}" style="display:none;">
+              </label>
+              {% endfor %}
+            </div>
+            {% elif item.get('notice') %}
+            <!-- Notice/message style: text inside a bordered note box -->
+            <div class="notice-box">{{ item.notice }}</div>
+            <div class="q-text">{{ item.q }}</div>
+            <div class="option-list">
+              {% for opt in item.options %}
+              {% set oi = loop.index0 %}
+              <label class="option-item" onclick="selectOpt(this)">
+                <span class="opt-letter">{{ ['A','B','C','D','E','F','G','H'][oi] }}</span>
+                <span style="flex:1;">{{ opt }}</span>
                 <input type="radio" name="q{{ qi }}_i{{ ii }}" value="{{ oi }}" style="display:none;">
               </label>
               {% endfor %}
