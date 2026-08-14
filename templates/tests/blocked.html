@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Test boshlangan — IELTS ZONE online{% endblock %}
+{% block extra_head %}
+<style>
+html, body { height: 100%; margin: 0; }
+.navbar, .footer { display: none !important; }
+body { background: var(--bg-secondary); }
+.lock-wrap {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; min-height: 100dvh; padding: 24px;
+}
+.lock-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px 28px; max-width: 380px;
+  width: 100%; text-align: center;
+}
+.lock-icon { font-size: 56px; margin-bottom: 16px; }
+.lock-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+.lock-text { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 24px; }
+.lock-btn {
+  display: block; width: 100%; padding: 14px; border: none; border-radius: 12px;
+  background: var(--purple); color: #fff; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+}
+.lock-note { font-size: 12px; color: var(--text-secondary); margin-top: 14px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="lock-wrap">
+  <div class="lock-card">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">Test allaqachon boshlangan</div>
+    <div class="lock-text">
+      Siz bu imtihonni <b>allaqachon boshlagansiz</b>.<br><br>
+      Har bir imtihon faqat <b>bir marta</b> boshlanadi va davom ettirish mumkin emas.<br><br>
+      Qayta boshlash uchun <b>Telegram botga</b> qayting va
+      <b>«🔁 Qayta ishlash so'rovi»</b> tugmasini bosing — so'rovingiz adminga yuboriladi.
+    </div>
+    <button class="lock-btn" onclick="closeApp()">Yopish</button>
+    <div class="lock-note">IELTS ZONE online</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function closeApp() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.close();
+  } else {
+    window.close();
+  }
+}
+</script>
+{% endblock %}

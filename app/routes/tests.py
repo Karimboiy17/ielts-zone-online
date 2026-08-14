@@ -81,7 +81,11 @@ def mini_test(section):
         "status": "started",
     })
     if existing:
-        return redirect(url_for("tests.take_test_all", attempt_id=existing["_id"]))
+        # NO RESUME: once started, the student cannot continue without admin
+        # approval. They must press "Qayta ishlash so'rovi" in the bot.
+        return render_template("tests/blocked.html",
+                               section=section,
+                               test_title=test.get("title", section)), 403
 
     attempt = TestAttempt.create(user_id, test["_id"], section)
     if tg_id:
