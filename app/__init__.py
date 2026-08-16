@@ -118,3 +118,22 @@ def _seed_data(app):
     except Exception as e:
         print(f"  ⚠ Auto-seed B1 MID skipped: {e}")
 
+    # Auto-seed ALL other level tests (always refresh content from code)
+    auto_seeds = [
+        ("app.seed_novice_mid", "seed_novice_mid", "NOVICE MID"),
+        ("app.seed_novice_end", "seed_novice_end", "NOVICE END"),
+        ("app.seed_a1_mid", "seed_a1_mid", "A1 MID"),
+        ("app.seed_a1_end", "seed_a1_end", "A1 END"),
+        ("app.seed_a2_mid", "seed_a2_mid", "A2 MID"),
+        ("app.seed_a2_end", "seed_a2_end", "A2 END"),
+        ("app.seed_b1_end", "seed_b1_end", "B1 END"),
+        ("app.seed_b1plus_end", "seed_b1plus_end", "B1+ END"),
+    ]
+    for mod_name, func_name, label in auto_seeds:
+        try:
+            mod = __import__(mod_name, fromlist=[func_name])
+            n = getattr(mod, func_name)(mongo.db)
+            print(f"  ✓ {label} test seeded ({n} questions)")
+        except Exception as e:
+            print(f"  ⚠ Auto-seed {label} skipped: {e}")
+
