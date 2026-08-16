@@ -370,6 +370,9 @@ body { background: var(--bg-secondary); }
           {% elif question.type == 'writing' %}
           <div class="q-item">
             <div class="q-text" style="white-space:pre-wrap;">{{ question.question }}</div>
+            {% if question.get('image') %}
+            <div style="text-align:center;margin-bottom:12px;"><img src="{{ question.image }}" alt="Task image" style="max-width:100%;height:auto;border-radius:8px;border:1px solid var(--border);"></div>
+            {% endif %}
             <textarea name="q{{ qi }}_answer" class="writing-textarea" placeholder="Javobingizni shu yerga yozing..."></textarea>
             {% if question.get('word_limit') %}
             <div style="text-align:right;margin-top:6px;font-size:12px;color:var(--text-muted);">So'zlar: <span class="wc">0</span> / {{ question.word_limit }}</div>
