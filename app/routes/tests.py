@@ -839,9 +839,11 @@ def _gap_answer_ok(user_val, correct_val):
 def flag_leave(attempt_id):
     """Record that the student left the exam app (visibility lost).
     Used to deter screenshot-sharing: leaving the mini app is required to
-    send screenshots to others — every leave is logged for the admin."""
+    send screenshots to others — every leave is logged AND the admin gets
+    an instant Telegram notification (throttled to 1 per 30s per attempt)."""
     from app.extensions import mongo as _mongo
     import json as _json
+    import requests as _req
     attempt = TestAttempt.get_by_id(attempt_id)
     if not attempt:
         return _json.dumps({"ok": False}), 404
@@ -853,6 +855,60 @@ def flag_leave(attempt_id):
         {"$set": {"leave_events": leaves[-20:], "leave_count": len(leaves),
                   "last_leave_at": now}}
     )
+    # ---- ADMIN REAL-TIME NOTIFICATION (throttled 30s) ----
+    try:
+        last_notify = attempt.get("last_leave_notify_at")
+        last_ts = 0
+        if last_notify:
+            if hasattr(last_notify, "timestamp"):
+                last_ts = last_notify.timestamp()
+            else:
+                last_ts = float(last_notify)
+        if now.timestamp() - last_ts > 30:
+            token = current_app.config.get("BOT_TOKEN", "")
+            admin_chat = current_app.config.get("ADMIN_CHAT_ID", "")
+            if token and admin_chat:
+                tg_id = attempt.get("tg_id", "")
+                name = ""
+                try:
+                    st = _mongo.db.students.find_one({"tg_id": str(tg_id)})
+                    name = (st or {}).get("full_name", "")
+                except Exception:
+                    pass
+                if not name and attempt.get("user_id"):
+                    try:
+                        u = _mongo.db.users.find_one({"_id": ObjectId(attempt["user_id"])})
+                        name = (u or {}).get("name", "")
+                    except Exception:
+                        pass
+                test_doc = _mongo.db.tests.find_one({"_id": ObjectId(attempt["test_id"])}) if attempt.get("test_id") else None
+                title = (test_doc or {}).get("title", attempt.get("section", "?"))
+                _req.post(
+                    f"https://api.telegram.org/bot{token}/sendMessage",
+                    json={
+                        "chat_id": str(admin_chat).strip(),
+                        "text": (
+                            f"⚠️ <b>IMTIHONDAN CHIQISH</b>\n"
+                            f"━━━━━━━━━━━━━━━━\n"
+                            f"👤 <b>Ism:</b> {name or '—'}\n"
+                            f"🆔 Telegram ID: {tg_id or '—'}\n"
+                            f"📝 Imtihon: <b>{title}</b>\n"
+                            f"⏰ Vaqt: {now.strftime('%H:%M:%S')}\n"
+                            f"🔢 Jami chiqish: <b>{len(leaves)}</b>\n"
+                            f"━━━━━━━━━━━━━━━━\n"
+                            f"📸 Ehtimol screenshot/screen-record olishga urinish!\n"
+                            f"🛡 Tarqatilgan bo'lsa — watermark'dan kimligi aniqlanadi."
+                        ),
+                        "parse_mode": "HTML",
+                    },
+                    timeout=10,
+                )
+                _mongo.db.attempts.update_one(
+                    {"_id": ObjectId(attempt_id)},
+                    {"$set": {"last_leave_notify_at": now}}
+                )
+    except Exception:
+        pass
     return _json.dumps({"ok": True, "count": len(leaves)})
 
 
