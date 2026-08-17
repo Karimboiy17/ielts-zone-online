@@ -89,7 +89,7 @@ LISTENING_QUESTIONS = [
      "points": 5},
 
     # Part 2 (Q16-20): label the plan (matching A-I)
-    {"id": "l_p2b", "type": "matching", "section": "listening", "part": 2, "start_num": 16,
+    {"id": "l_p2b", "type": "matching", "section": "listening", "part": 3, "start_num": 16,
      "instruction": "Part 2. Questions 16-20.\nLabel the plan below.\nWrite the correct letter, A-I, next to questions 16-20.",
      "points": 5,
      "options": [
@@ -103,7 +103,7 @@ LISTENING_QUESTIONS = [
      "answer": [1, 6, 4, 2, 7]},
 
     # Part 3 (Q21-27): MC
-    {"id": "l_p3", "type": "multiple_group", "section": "listening", "part": 3, "start_num": 21,
+    {"id": "l_p3", "type": "multiple_group", "section": "listening", "part": 4, "start_num": 21,
      "instruction": "Part 3. Questions 21-27.\nChoose the correct letter A, B or C.",
      "points": 7,
      "items": [
@@ -129,7 +129,7 @@ LISTENING_QUESTIONS = [
      ]},
 
     # Part 3 (Q28-30): sentence completion (gap-fill)
-    {"id": "l_p3b", "type": "writing", "section": "listening", "part": 3, "start_num": 28,
+    {"id": "l_p3b", "type": "writing", "section": "listening", "part": 5, "start_num": 28,
      "instruction": "Part 3. Questions 28-30.\nComplete the sentences.\nUse NO MORE THAN ONE WORD for each answer.",
      "passage": "Good note-taking improves concentration during (28) ________.\nMaking notes with the help of a (29) ________ is useful.\nHaving a broad (30) ________ on note paper makes notes easier to read.",
      "gap_items": ["LECTURES", "DIAGRAM", "MARGIN"],
@@ -137,7 +137,7 @@ LISTENING_QUESTIONS = [
      "points": 3},
 
     # Part 4 (Q31-40): notes completion (gap-fill)
-    {"id": "l_p4", "type": "writing", "section": "listening", "part": 4, "start_num": 31,
+    {"id": "l_p4", "type": "writing", "section": "listening", "part": 6, "start_num": 31,
      "instruction": "Part 4. Questions 31-40.\nComplete the notes below.\nWrite NO MORE THAN ONE WORD for each answer.",
      "title": "AIRPORT DESIGN",
      "passage": "• Can compare a past airport to a (31) ________ station\n• Now, can compare an airport to a small (32) ________\n\nReasons for changes\n• Greater passenger numbers because of:\n  o (33) ________ large-scale (e.g., package deals)\n  o (34) ________ global (e.g., meetings)\n• Need to create a good (35) ________ of a country\n  o airports called 'gateways'\n\nTypes of change\nInside the building\n• Many big (36) ________ provide space and light (e.g., Beijing airport)\n• Calm atmosphere with easy movement reduces (37) ________ for passengers\n\nThe exterior of the building\n• Designed to match the surroundings\n  o e.g. the shape of the (38) ________ on the Arctic Circle airport, Norway\n  o the (39) ________ outside airports in India and Thailand\n• Structural design reduces (40) ________ and costs",
@@ -159,7 +159,7 @@ READING_QUESTIONS = [
      "points": 5},
 
     # Passage 1 — True/False/Not Given (Q6-10)
-    {"id": "r_p2", "type": "multiple_group", "section": "reading", "part": 1, "start_num": 6,
+    {"id": "r_p2", "type": "multiple_group", "section": "reading", "part": 2, "start_num": 6,
      "instruction": "Questions 6-10.\nDo the following statements agree with the information given in Reading Passage 1?\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
      "points": 5,
      "items": [
@@ -176,7 +176,7 @@ READING_QUESTIONS = [
      ]},
 
     # Passage 1 — short answer (Q11-13)
-    {"id": "r_p3", "type": "writing", "section": "reading", "part": 1, "start_num": 11,
+    {"id": "r_p3", "type": "writing", "section": "reading", "part": 3, "start_num": 11,
      "instruction": "Questions 11-13.\nAnswer the questions below.\nUse NO MORE THAN ONE WORD and/or a NUMBER from the passage for each answer.",
      "passage": "How tall was the final tower that William built? (11) ________\nWhat did the villagers use for fuel before the windmill was built? (12) ________\nWhat school subject has become more popular in William's village? (13) ________",
      "gap_items": ["39 FEET", "KEROSENE", "SCIENCE"],
@@ -184,7 +184,7 @@ READING_QUESTIONS = [
      "points": 3},
 
     # Passage 2 — paragraph matching (Q14-18)
-    {"id": "r_p4", "type": "matching", "section": "reading", "part": 2, "start_num": 14,
+    {"id": "r_p4", "type": "matching", "section": "reading", "part": 4, "start_num": 14,
      "instruction": "READING PASSAGE 2. Questions 14-18.\nReading Passage 2 has eight paragraphs, A-H.\nWhich paragraph contains the following information?\nNB You may use any letter more than once.",
      "title": "White mountain, green tourism",
      "passage": CHAMONIX_TEXT,
@@ -200,7 +200,7 @@ READING_QUESTIONS = [
      "answer": [2, 6, 0, 7, 4]},
 
     # Passage 2 — choose TWO (Q19-20)
-    {"id": "r_p5", "type": "multiple_group", "section": "reading", "part": 2, "start_num": 19,
+    {"id": "r_p5", "type": "multiple_group", "section": "reading", "part": 5, "start_num": 19,
      "instruction": "Questions 19-20.\nChoose TWO letters, A-E.\nThe writer mentions several ways that the authorities aim to educate tourists in Chamonix. Which TWO of the following ways are mentioned?",
      "points": 2,
      "items": [
@@ -213,7 +213,7 @@ READING_QUESTIONS = [
      ]},
 
     # Passage 2 — choose TWO (Q21-22)
-    {"id": "r_p6", "type": "multiple_group", "section": "reading", "part": 2, "start_num": 21,
+    {"id": "r_p6", "type": "multiple_group", "section": "reading", "part": 6, "start_num": 21,
      "instruction": "Questions 21-22.\nChoose TWO letters, A-E.\nThe writer mentions several ways that hotels are reducing their carbon emissions. Which TWO of the following ways are mentioned?",
      "points": 2,
      "items": [
@@ -226,7 +226,7 @@ READING_QUESTIONS = [
      ]},
 
     # Passage 2 — sentence completion (Q23-26)
-    {"id": "r_p7", "type": "writing", "section": "reading", "part": 2, "start_num": 23,
+    {"id": "r_p7", "type": "writing", "section": "reading", "part": 7, "start_num": 23,
      "instruction": "Questions 23-26.\nComplete the sentences below.\nChoose NO MORE THAN TWO WORDS from the passage for each answer.",
      "passage": "The first people to discover the Chamonix valley were (23) ________.\nChamonix's busiest tourist season is the (24) ________.\nPublic areas, such as the (25) ________ in Chamonix, are using fewer resources.\nThe (26) ________ on the mountains around Chamonix provide visual evidence of global warming.",
      "gap_items": ["EXPLORERS", "SUMMER", "ICE RINK", "(MELTING) GLACIERS"],
@@ -234,7 +234,7 @@ READING_QUESTIONS = [
      "points": 4},
 
     # Passage 3 — MC (Q27-31)
-    {"id": "r_p8", "type": "multiple_group", "section": "reading", "part": 3, "start_num": 27,
+    {"id": "r_p8", "type": "multiple_group", "section": "reading", "part": 8, "start_num": 27,
      "instruction": "READING PASSAGE 3. Questions 27-31.\nChoose the correct letter, A, B, C or D.",
      "title": "Reading in a whole new way",
      "passage": SCREEN_TEXT,
@@ -258,7 +258,7 @@ READING_QUESTIONS = [
      ]},
 
     # Passage 3 — Yes/No/Not Given (Q32-36)
-    {"id": "r_p9", "type": "multiple_group", "section": "reading", "part": 3, "start_num": 32,
+    {"id": "r_p9", "type": "multiple_group", "section": "reading", "part": 9, "start_num": 32,
      "instruction": "Questions 32-36.\nDo the following statements agree with the views of the writer in Reading Passage 3?\nYES if the statement agrees with the views of the writer\nNO if the statement contradicts the views of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
      "points": 5,
      "items": [
@@ -275,7 +275,7 @@ READING_QUESTIONS = [
      ]},
 
     # Passage 3 — sentence endings matching (Q37-40)
-    {"id": "r_p10", "type": "matching", "section": "reading", "part": 3, "start_num": 37,
+    {"id": "r_p10", "type": "matching", "section": "reading", "part": 10, "start_num": 37,
      "instruction": "Questions 37-40.\nComplete each sentence with the correct ending, A-F, below.",
      "points": 4,
      "events": [

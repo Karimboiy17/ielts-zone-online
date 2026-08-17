@@ -1,5 +1,22 @@
 # IELTS ZONE — Test seed moduli yozish qo'llanmasi
 
+## ⚠️ STANDART (har bir test bunga mos bo'lishi SHART)
+
+Yangi test kiritishdan oldin `python3.11 validate_tests.py` ishga tushiring (0 xato bo'lishi kerak).
+
+1. **10 part**: Listening 4 (`l_p1`..`l_p4`) + Reading 5 (`r_p1`..`r_p5`) + Writing 1 (`w1`)
+2. **Part raqamlari** section ichida TAKRORLANMAYDI, ketma-ket: l_p1=1..l_p4=4, r_p1=1..r_p5=5 (sub-part bo'lsa ham raqamlar davom etadi: l_p2=2, l_p2b=3)
+3. **start_num** section ichida ketma-ket: har part 5 savol → 1,6,11,16,21...
+4. **id konventsiyasi**: `l_p<N>`, `r_p<N>`, `w<N>` (sub-part: `l_p2b`)
+5. **Har savolda javob**: multiple_group items[] da `answer` (index), matching da `answer` (list), writing gap da `gap_items`+`gap_labels`
+6. **test dict**: section, title ("📗 B1 · MID" format), icon (🌱/🔰/📘/📗/📕), time_limit=55, active=True, audio_parts=[AUDIO,AUDIO,AUDIO,AUDIO]
+7. **Barcha asset'lar** static/images/<section>/ va static/audio/<section>_listening_full.mp3 da bo'lishi kerak
+8. **gap passage'lar** `(N) ________` formatida (template `_render_gaps` shu formatni almashtiradi)
+9. **Reading Part 5** gap-MC bo'lsa: `"inline_gaps": True` (dropdown matn ichida chiqadi)
+10. **Reading Part 1** notices: `"notice"` field'ga matn (rasm kesish shart emas)
+
+Istisno: Novice testlari (novice_mid/novice_end) asl imtihon tuzilmasidan kelib chiqib boshqacha part soniga ega — validate_tests.py ularga WARN beradi (xato emas), lekin part raqamlari ketma-ket bo'lishi SHART.
+
 ## Maqsad
 Bitta imtihon uchun `app/seed_<section>.py` modulini yozish, rasmlarni kesish, audioni joylashtirish.
 
