@@ -299,11 +299,39 @@ body { background: var(--bg-secondary); }
   border: 1.5px solid var(--border); border-radius: 10px;
   font-size: 14px; font-weight: 600; cursor: pointer;
 }
+/* ===== ANTI-LEAK: matn nusxalash va rasm saqlashni bloklash ===== */
+.test-shell {
+  -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+}
+.test-shell input, .test-shell textarea {
+  -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;
+}
+.test-shell img { -webkit-touch-callout: none; pointer-events: none; }
+.test-shell .option-item img, .test-shell .q-picture-left img { pointer-events: none; }
+/* Watermark (screenshot'da student ko'rinadi — tarqatish kuzatiladi) */
+.test-watermark {
+  position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.45); color: #fff; font-size: 11px; font-weight: 600;
+  padding: 4px 12px; border-radius: 20px; letter-spacing: 0.3px;
+  z-index: 9999; pointer-events: none; white-space: nowrap; max-width: 92%;
+  overflow: hidden; text-overflow: ellipsis;
+  opacity: 0.85;
+}
+.test-watermark-corner {
+  position: fixed; top: 6px; left: 8px;
+  color: rgba(255,255,255,0.28); font-size: 10px; font-weight: 600;
+  z-index: 9999; pointer-events: none; letter-spacing: 0.3px;
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="test-shell">
+  {% if watermark %}
+  <div class="test-watermark-corner">{{ watermark }}</div>
+  <div class="test-watermark">🛡 {{ watermark }}</div>
+  {% endif %}
   <!-- TOP BAR -->
   <div class="test-topbar">
     <div class="topbar-title">
@@ -545,6 +573,29 @@ body { background: var(--bg-secondary); }
 </div>
 
 <script>
+// ===== ANTI-LEAK: nusxalash/kontekst menyu/rasm sudrashni bloklash =====
+(function () {
+  function isEditable(t) {
+    return t && (t.closest('input') || t.closest('textarea') || t.closest('select'));
+  }
+  document.addEventListener('contextmenu', function (e) {
+    if (!isEditable(e.target)) e.preventDefault();
+  });
+  document.addEventListener('copy', function (e) {
+    if (!isEditable(e.target)) e.preventDefault();
+  });
+  document.addEventListener('cut', function (e) {
+    if (!isEditable(e.target)) e.preventDefault();
+  });
+  document.addEventListener('dragstart', function (e) { e.preventDefault(); });
+  document.addEventListener('keydown', function (e) {
+    // Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+S, Ctrl/Cmd+P, F12
+    if ((e.ctrlKey || e.metaKey) && ['c', 'x', 's', 'p', 'u'].indexOf(e.key.toLowerCase()) !== -1) {
+      if (!isEditable(e.target)) e.preventDefault();
+    }
+    if (e.key === 'F12') e.preventDefault();
+  });
+})();
 // ===== STEP-BASED TEST: 0=Listening, 1=Reading, 2=Writing =====
 var STEP_TIMES = {0: 0, 1: 35*60, 2: 20*60};  // listening: audio-driven, reading 35min, writing 20min (jami 55)
 var STEP_LABELS = {0: '🎧 LISTENING', 1: '📖 READING', 2: '✍️ WRITING'};

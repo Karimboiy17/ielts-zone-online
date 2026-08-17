@@ -790,10 +790,26 @@ def take_test_all(attempt_id):
     time_limit = test.get("time_limit", 120) * 60
     time_left = max(0, int(time_limit - elapsed))
 
+    # Watermark: identify the student (anti-leak — screenshots are traceable)
+    watermark = ""
+    try:
+        tg_id = attempt.get("tg_id", "")
+        name = ""
+        if tg_id:
+            st = mongo.db.students.find_one({"tg_id": str(tg_id)})
+            name = (st or {}).get("full_name", "")
+        if not name and attempt.get("user_id"):
+            u = mongo.db.users.find_one({"_id": ObjectId(attempt["user_id"])})
+            name = (u or {}).get("name", "")
+        if name or tg_id:
+            watermark = f"{name} · ID: {tg_id}".strip(" ·")
+    except Exception:
+        watermark = ""
+
     return render_template("tests/engnovate-take.html",
                          attempt=attempt, test=test, questions=prepared,
                          audio_parts=audio_parts,
-                         time_left=time_left)
+                         time_left=time_left, watermark=watermark)
 
 
 def _gap_answer_ok(user_val, correct_val):
