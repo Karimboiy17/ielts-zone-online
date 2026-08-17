@@ -834,6 +834,28 @@ def _gap_answer_ok(user_val, correct_val):
     return False
 
 
+@tests_bp.route("/take/<attempt_id>/leave", methods=["POST"])
+@csrf.exempt
+def flag_leave(attempt_id):
+    """Record that the student left the exam app (visibility lost).
+    Used to deter screenshot-sharing: leaving the mini app is required to
+    send screenshots to others — every leave is logged for the admin."""
+    from app.extensions import mongo as _mongo
+    import json as _json
+    attempt = TestAttempt.get_by_id(attempt_id)
+    if not attempt:
+        return _json.dumps({"ok": False}), 404
+    now = datetime.now(timezone.utc)
+    leaves = attempt.get("leave_events") or []
+    leaves.append(now.strftime("%Y-%m-%d %H:%M:%S"))
+    _mongo.db.attempts.update_one(
+        {"_id": ObjectId(attempt_id)},
+        {"$set": {"leave_events": leaves[-20:], "leave_count": len(leaves),
+                  "last_leave_at": now}}
+    )
+    return _json.dumps({"ok": True, "count": len(leaves)})
+
+
 @tests_bp.route("/take/<attempt_id>/all/submit", methods=["POST"])
 @csrf.exempt
 def submit_test_all(attempt_id):
@@ -1201,6 +1223,11 @@ def _notify_admin_result(test, attempt, percentage, level, attempt_id, tg_init="
         f"🏆 Daraja: <b>{level['level']} — {level['label']}</b>\n"
         f"🕒 Vaqt: {datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M')}"
     )
+
+    # Anti-leak: imtihondan chiqib ketishlar soni
+    leave_count = attempt.get("leave_count", 0)
+    if leave_count:
+        text += f"\n⚠️ Ilovadan chiqish: {leave_count} marta"
 
     # Add per-section details
     if section_breakdown:
